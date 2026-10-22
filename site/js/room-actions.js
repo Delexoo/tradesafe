@@ -1,6 +1,75 @@
 /** What the room should ask this person to do next. */
+import { money } from "./format.js";
 
-export function nextStep({ status, role, accepted, paidWaiting, payoutReady }) {
+export function fulfillCopy(category, terms = {}) {
+  const cat = category || terms.category || "other";
+  if (cat === "digital") {
+    return {
+      headline: "Send the digital delivery.",
+      detail: terms.preview_url
+        ? "Share the final file or access link. A preview was listed when this trade was created."
+        : "Share the final file, link, or account handoff details.",
+      label: "I've delivered it",
+      mode: "digital",
+      placeholder: "Delivery link or how they get access",
+    };
+  }
+  if (cat === "website_domain") {
+    return {
+      headline: "Complete the domain transfer.",
+      detail: terms.domain_name
+        ? `Confirm you sent the auth code or finished DNS for ${terms.domain_name}.`
+        : "Confirm you sent the auth code or finished DNS for the domain.",
+      label: "Transfer started",
+      mode: "domain",
+      placeholder: "Auth code sent, unlock done, DNS notes…",
+    };
+  }
+  if (cat === "service") {
+    return {
+      headline: "Mark the work complete.",
+      detail: terms.service_scope
+        ? `Done means: ${terms.service_scope}`
+        : "Add a short note about what you finished.",
+      label: "Work is done",
+      mode: "service",
+      placeholder: "What you completed",
+    };
+  }
+  if (["physical", "electronics", "collectibles"].includes(cat)) {
+    const other = terms.ship_mode === "other";
+    return {
+      headline: other ? "Confirm you handed it over." : "Tell the buyer you shipped it.",
+      detail: other
+        ? "Describe how it was delivered (no carrier tracking required)."
+        : "Add a carrier tracking number, or switch to other delivery if there is no official tracking.",
+      label: "I've sent it",
+      mode: other ? "ship_other" : "ship_carrier",
+      placeholder: other ? "How you handed it over" : "Tracking number",
+    };
+  }
+  return {
+    headline: "Tell the buyer you sent it.",
+    detail: "Add a tracking number or a short note, then continue.",
+    label: "I've sent it",
+    mode: "other",
+    placeholder: "Tracking number, or how you handed it over",
+  };
+}
+
+export function nextStep({
+  status,
+  role,
+  accepted,
+  paidWaiting,
+  payoutReady,
+  category,
+  terms,
+  amountCents,
+  currency,
+  feeCents,
+  netCents,
+}) {
   if (status === "disputed") {
     return {
       headline: "This trade is paused.",
@@ -37,7 +106,8 @@ export function nextStep({ status, role, accepted, paidWaiting, payoutReady }) {
   ) {
     return {
       headline: "Add where you get paid.",
-      detail: "Stripe sends the payment to that account. TradeSafe does not hold the money.",
+      detail:
+        "Finish Stripe Connect so Stripe can send your share (listed amount minus TradeSafe’s 2.9% + $0.30). TradeSafe does not hold the money.",
       action: { act: "payout", label: "Add payout account" },
     };
   }
@@ -57,11 +127,15 @@ export function nextStep({ status, role, accepted, paidWaiting, payoutReady }) {
   }
   if (status === "awaiting_payment" || status === "payment_pending") {
     if (role === "buyer") {
+      const feeNote =
+        Number.isFinite(amountCents) && amountCents > 0
+          ? ` You pay ${money(amountCents, currency)}; the seller receives about ${money(netCents, currency)} after TradeSafe’s fee of ${money(feeCents, currency)}.`
+          : "";
       return {
         headline: "Pay with your card.",
         detail: paidWaiting
           ? "If you already paid, stay on this page. It updates when Stripe confirms the card."
-          : "This opens Stripe to authorize the card. TradeSafe does not hold the money.",
+          : `This opens Stripe to authorize the card.${feeNote} TradeSafe does not hold the money.`,
         action: { act: "pay", label: "Pay now" },
       };
     }
@@ -73,11 +147,14 @@ export function nextStep({ status, role, accepted, paidWaiting, payoutReady }) {
   }
   if (["awaiting_fulfillment", "funds_authorized", "in_fulfillment"].includes(status)) {
     if (role === "seller") {
+      const copy = fulfillCopy(category, terms);
       return {
-        headline: "Tell the buyer you sent it.",
-        detail: "Add a tracking number or a short note, then continue.",
-        action: { act: "track", label: "I've sent it" },
+        headline: copy.headline,
+        detail: copy.detail,
+        action: { act: "track", label: copy.label },
         track: true,
+        trackMode: copy.mode,
+        trackPlaceholder: copy.placeholder,
       };
     }
     return {

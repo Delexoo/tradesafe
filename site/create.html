@@ -8,7 +8,7 @@
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/css/app.css?v=20261022g">
+  <link rel="stylesheet" href="/css/app.css?v=20261022j">
 </head>
 <body class="app" data-page="create">
   <a class="skip" href="#content">Skip to content</a>
@@ -53,6 +53,7 @@
               </select>
             </div>
           </div>
+          <p class="hint" id="fee-hint">Buyer pays the listed amount. Seller receives that amount minus TradeSafe’s fee (2.9% + $0.30). Stripe processes the payment.</p>
         </div>
         <div data-pane="1" hidden>
           <div class="form-row cols-2">
@@ -79,15 +80,71 @@
               </select>
             </div>
           </div>
+          <div data-cat-panel="ship" hidden>
+            <div class="form-row cols-2">
+              <div>
+                <label class="field-label" for="ship-mode">Shipping</label>
+                <select class="field" id="ship-mode">
+                  <option value="carrier" selected>Official carrier</option>
+                  <option value="other">Other delivery</option>
+                </select>
+              </div>
+              <div id="carrier-wrap">
+                <label class="field-label" for="carrier-name">Carrier (optional)</label>
+                <input class="field" id="carrier-name" maxlength="80" placeholder="USPS, UPS, DHL…">
+              </div>
+            </div>
+          </div>
+          <div data-cat-panel="digital" hidden>
+            <div>
+              <label class="field-label" for="digital-kind">What is delivered</label>
+              <select class="field" id="digital-kind">
+                <option value="file">File / download</option>
+                <option value="link">Link / access</option>
+                <option value="account">Account handoff</option>
+                <option value="other" selected>Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="preview-url">Preview link (optional)</label>
+              <input class="field" id="preview-url" type="url" maxlength="2000" placeholder="https://…">
+              <p class="field-error hidden" data-error-for="preview-url"></p>
+            </div>
+          </div>
+          <div data-cat-panel="website_domain" hidden>
+            <div>
+              <label class="field-label" for="domain-name">Domain name</label>
+              <input class="field" id="domain-name" maxlength="253" placeholder="example.com" autocomplete="off">
+              <p class="field-error hidden" data-error-for="domain-name"></p>
+            </div>
+            <div class="form-row cols-2">
+              <div>
+                <label class="field-label" for="registrar">Registrar (optional)</label>
+                <input class="field" id="registrar" maxlength="120" placeholder="Namecheap, Cloudflare…">
+              </div>
+              <div>
+                <label class="field-label" for="domain-notes">Transfer notes (optional)</label>
+                <input class="field" id="domain-notes" maxlength="500" placeholder="Auth code, DNS, unlock…">
+              </div>
+            </div>
+          </div>
+          <div data-cat-panel="service" hidden>
+            <div>
+              <label class="field-label" for="service-scope">Completion criteria</label>
+              <input class="field" id="service-scope" maxlength="500" placeholder="What done looks like for both of you">
+              <p class="field-error hidden" data-error-for="service-scope"></p>
+            </div>
+          </div>
           <div>
-            <label class="field-label" for="description">Description, optional</label>
+            <label class="field-label" for="description">Description (optional)</label>
             <input class="field" id="description" maxlength="5000" placeholder="Anything the other person should know">
           </div>
         </div>
         <div data-pane="2" hidden>
           <div>
-            <span class="field-label">You are the</span>
-            <div class="choice" role="group" aria-label="Your role">
+            <span class="field-label" id="role-label">You are the</span>
+            <div class="choice choice-segment" role="group" aria-labelledby="role-label">
+              <span class="choice-thumb" aria-hidden="true"></span>
               <button type="button" class="on" data-role="seller" aria-pressed="true">Seller</button>
               <button type="button" data-role="buyer" aria-pressed="false">Buyer</button>
             </div>
@@ -101,7 +158,7 @@
         </div>
         <div data-pane="3" hidden>
           <div id="payout-box" hidden>
-            <p class="hint" id="payout-status">Add where you get paid. Stripe sends the money there. TradeSafe does not hold it.</p>
+            <p class="hint" id="payout-status">Add a Stripe payout account (bank or debit). Stripe sends your share there after the buyer confirms. TradeSafe never stores your card for receiving money and does not hold the funds.</p>
             <button type="button" class="btn act-btn" id="payout-btn">Add payout account</button>
           </div>
           <div id="policy-box"></div>
@@ -130,6 +187,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome({ active: "Create a trade" });
   </script>
-  <script type="module" src="/js/create.js?v=20261022i"></script>
+  <script type="module" src="/js/create.js?v=20261022j"></script>
 </body>
 </html>

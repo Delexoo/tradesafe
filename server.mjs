@@ -44,6 +44,7 @@ import {
   completeEmailHandoff,
   createEmailHandoff,
 } from "./lib/email-handoff.mjs";
+import { platformFeeCents } from "./lib/fees.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -1213,14 +1214,17 @@ async function performAction(userId, tradeId, action, payload, req) {
       throw err;
     }
     const origin = publicOrigin(req);
+    const applicationFee = platformFeeCents(tx.amount_cents);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_intent_data: {
         capture_method: "manual",
         transfer_data: { destination: sellerPayout.accountId },
+        application_fee_amount: applicationFee,
         metadata: {
           transaction_id: tradeId,
           reference_code: tx.reference_code,
+          platform_fee_cents: String(applicationFee),
         },
       },
       line_items: [
@@ -1237,7 +1241,10 @@ async function performAction(userId, tradeId, action, payload, req) {
       ],
       success_url: `${origin}/room.html?id=${encodeURIComponent(tradeId)}&paid=1`,
       cancel_url: `${origin}/room.html?id=${encodeURIComponent(tradeId)}&paid=0`,
-      metadata: { transaction_id: tradeId },
+      metadata: {
+        transaction_id: tradeId,
+        platform_fee_cents: String(applicationFee),
+      },
     });
     const paymentPatch = {
       provider: "stripe",
@@ -1246,6 +1253,10 @@ async function performAction(userId, tradeId, action, payload, req) {
       amount_cents: tx.amount_cents,
       currency: tx.currency,
       status: "pending",
+      metadata: {
+        platform_fee_cents: applicationFee,
+        seller_net_cents: Math.max(0, tx.amount_cents - applicationFee),
+      },
     };
     if (room.payment?.id) {
       await getAdmin().from("ts_payments").update(paymentPatch).eq("id", room.payment.id);
@@ -1330,12 +1341,24 @@ async function performAction(userId, tradeId, action, payload, req) {
 
   if (action === "submit_tracking") {
     if (role !== "seller") throw new Error("Only seller");
+    const shipMode = payload.ship_mode === "carrier" ? "carrier" : "other";
+    const tracking =
+      shipMode === "carrier" ? payload.tracking_number || null : null;
     await getAdmin()
       .from("ts_fulfillments")
       .update({
         status: "shipped",
-        tracking_number: payload.tracking_number || null,
+        tracking_number: tracking,
+        tracking_carrier: shipMode === "carrier" ? payload.carrier || null : null,
         seller_notes: payload.notes || null,
+        evidence: [
+          {
+            kind: shipMode === "carrier" ? "carrier_tracking" : "delivery_note",
+            at: new Date().toISOString(),
+            tracking_number: tracking,
+            notes: payload.notes || null,
+          },
+        ],
       })
       .eq("transaction_id", tradeId);
     await getAdmin()

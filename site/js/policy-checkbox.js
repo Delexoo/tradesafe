@@ -1,12 +1,11 @@
-/** Shared policy acceptance — required unchecked + separate optional device. */
+/** Shared policy acceptance — required unchecked; device remember turns on with accept. */
 
 export function policyCheckboxHtml(ids = {}) {
   const requiredId = ids.required || "policy-accept";
-  const optionalId = ids.optional || "device-optional";
   if (ids.wizard) {
     return `
 <div class="policy-block policy-wizard">
-  <p class="hint policy-explain">TradeSafe does not hold the money.</p>
+  <p class="hint policy-explain">TradeSafe does not hold the money. Stripe authorizes the card until both sides finish.</p>
   <label class="policy-accept" for="${requiredId}">
     <input type="checkbox" id="${requiredId}" name="policy_accept">
     <span>
@@ -17,12 +16,8 @@ export function policyCheckboxHtml(ids = {}) {
       <a href="/legal.html#security" target="_blank" rel="noopener">Security</a>,
       and
       <a href="/legal.html#device" target="_blank" rel="noopener">Device</a>
-      policies.
+      policies. Accepting also remembers this browser to help spot suspicious logins.
     </span>
-  </label>
-  <label class="policy-accept policy-optional" for="${optionalId}">
-    <input type="checkbox" id="${optionalId}" name="device_optional">
-    <span>Optional: remember this browser to spot suspicious logins.</span>
   </label>
 </div>`;
   }
@@ -46,26 +41,19 @@ export function policyCheckboxHtml(ids = {}) {
       <a href="/legal.html#security" target="_blank" rel="noopener">Security and Fraud Prevention Policy</a>,
       and
       <a href="/legal.html#device" target="_blank" rel="noopener">Device Recognition and Security Logging Notice</a>.
+      Accepting also remembers this browser to help spot suspicious logins.
       <em class="policy-required">Required — unchecked by default. Create and join are blocked until accepted on the server.</em>
-    </span>
-  </label>
-  <label class="policy-accept policy-optional" for="${optionalId}">
-    <input type="checkbox" id="${optionalId}" name="device_optional">
-    <span>
-      Optional: allow a first-party device recognition cookie (random token + coarse browser/OS category) to help detect suspicious session changes.
-      Declining does not block create/join; essential security controls still apply. This is <strong>not</strong> proof of identity and is not invasive fingerprinting.
     </span>
   </label>
 </div>`;
 }
 
-export function wirePolicyGate(requiredCheckbox, actionButton, errorEl, optionalCheckbox) {
+export function wirePolicyGate(requiredCheckbox, actionButton, errorEl) {
   const sync = () => {
     const ok = requiredCheckbox.checked;
     if (actionButton) actionButton.disabled = !ok;
   };
   requiredCheckbox.checked = false;
-  if (optionalCheckbox) optionalCheckbox.checked = false;
   requiredCheckbox.addEventListener("change", sync);
   sync();
   return {
@@ -82,8 +70,9 @@ export function wirePolicyGate(requiredCheckbox, actionButton, errorEl, optional
       }
       return true;
     },
+    /** Device remember turns on whenever required policies are accepted. */
     optionalDeviceAccepted() {
-      return !!(optionalCheckbox && optionalCheckbox.checked);
+      return !!requiredCheckbox.checked;
     },
   };
 }

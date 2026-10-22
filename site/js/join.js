@@ -15,7 +15,6 @@ const policyGate = wirePolicyGate(
   document.getElementById("policy-accept"),
   joinBtn,
   errorEl,
-  document.getElementById("device-optional"),
 );
 
 try {

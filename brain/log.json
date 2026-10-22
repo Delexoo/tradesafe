@@ -3,6 +3,48 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.17",
+      "date": "2026-10-22",
+      "title": "Create wizard polish, category fields, and seller-net fees",
+      "sections": [
+        {
+          "heading": "Wizard",
+          "added": [
+            "Create selects use a styled listbox instead of the native open menu.",
+            "Seller and Buyer use a two-way segmented control.",
+            "Category-specific fields cover shipping mode, digital preview, domain transfer details, and service completion criteria.",
+            "Description is labeled Description (optional)."
+          ]
+        },
+        {
+          "heading": "Design",
+          "added": [
+            "Primary and ghost buttons have hover and press motion, with reduced-motion respected."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Opening the email link on another device shows Check your other device instead of continuing into the app there.",
+            "Accepting the required policies also turns on remembering this browser; the separate optional checkbox is gone."
+          ]
+        },
+        {
+          "heading": "Room",
+          "added": [
+            "Fulfillment prompts match the trade category, including carrier tracking or other delivery, digital proof, domain transfer, and service completion."
+          ]
+        },
+        {
+          "heading": "Payments",
+          "added": [
+            "Stripe Checkout takes a seller-net TradeSafe fee of 2.9% plus $0.30 via application_fee_amount; the buyer still pays the listed amount.",
+            "Create and room copy show buyer pay amount versus approximate seller net, and still say TradeSafe does not hold the money."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.16",
       "date": "2026-10-22",
       "title": "Live email sign-in scripts ship with each deploy",

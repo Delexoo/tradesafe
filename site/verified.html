@@ -12,24 +12,44 @@
 <body class="app" data-page="login">
   <main id="content">
     <div class="panel create-card">
-      <h1>Signing you in</h1>
-      <p class="note" id="verified-status">The device that asked for this email will sign in too.</p>
+      <h1 id="verified-title">Signing you in</h1>
+      <p class="note" id="verified-status">One moment…</p>
     </div>
   </main>
   <script type="module">
     import { finishEmailHandoff } from "/js/email-handoff.js";
     import { safeNextPath } from "/js/auth-email.js";
 
+    const STORAGE_KEY = "ts-email-handoff";
     const params = new URLSearchParams(location.search);
+    const loginId = params.get("login");
+    const title = document.getElementById("verified-title");
     const status = document.getElementById("verified-status");
     const next = safeNextPath(location.search);
-    const result = await finishEmailHandoff(params.get("login"));
-    if (result.ok) {
+
+    let askedHere = false;
+    try {
+      const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+      askedHere = !!(stored && loginId && stored.id === loginId);
+    } catch {
+      askedHere = false;
+    }
+
+    const result = await finishEmailHandoff(loginId);
+    if (result.ok && askedHere) {
       location.replace(next);
+    } else if (result.ok) {
+      title.textContent = "Check your other device";
+      status.textContent =
+        "That device is signing in now. You can close this page.";
     } else if (result.signedInHere) {
-      status.textContent = "This browser is signed in, but the device that asked for the email could not be updated. Request a new link from that device.";
+      title.textContent = "Almost there";
+      status.textContent =
+        "This browser is signed in, but the device that asked for the email could not be updated. Request a new link from that device.";
     } else {
-      status.textContent = "This link could not sign you in. Go back to the device that asked for the email and request a new one.";
+      title.textContent = "Link did not work";
+      status.textContent =
+        "Go back to the device that asked for the email and request a new one.";
     }
   </script>
 </body>

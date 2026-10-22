@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { problemsForStep } from "../../../site/js/create-form.js";
+import {
+  categoryFieldProblems,
+  deliveryForCategory,
+  problemsForStep,
+} from "../../../site/js/create-form.js";
 
 const filled = {
   title: "Camera",
@@ -21,7 +25,35 @@ describe("create trade wizard", () => {
   });
 
   it("lets the description stay blank", () => {
-    expect(problemsForStep(1, { description: "" })).toEqual([]);
+    expect(problemsForStep(1, { description: "", category: "other" })).toEqual([]);
+  });
+
+  it("requires a domain for website trades", () => {
+    expect(
+      categoryFieldProblems({ category: "website_domain", domain_name: "" }).map((p) => p.id),
+    ).toEqual(["domain-name"]);
+  });
+
+  it("rejects a bad digital preview url", () => {
+    expect(
+      categoryFieldProblems({
+        category: "digital",
+        preview_url: "not-a-url",
+      }).map((p) => p.id),
+    ).toEqual(["preview-url"]);
+  });
+
+  it("requires completion criteria for services", () => {
+    expect(
+      categoryFieldProblems({ category: "service", service_scope: "  " }).map((p) => p.id),
+    ).toEqual(["service-scope"]);
+  });
+
+  it("suggests delivery from category", () => {
+    expect(deliveryForCategory("physical")).toBe("shipping");
+    expect(deliveryForCategory("digital")).toBe("digital_transfer");
+    expect(deliveryForCategory("website_domain")).toBe("digital_transfer");
+    expect(deliveryForCategory("service")).toBe("in_person");
   });
 
   it("asks for a display name on the role step", () => {

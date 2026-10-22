@@ -530,6 +530,74 @@ select.field {
   background-size: 14px;
   cursor: pointer;
 }
+select.field.listbox-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.listbox {
+  position: relative;
+}
+.listbox-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  cursor: pointer;
+  padding-right: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b675f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 6.2 8 10.5 12.5 6.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+.listbox.is-open .listbox-trigger {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 18%);
+}
+.listbox-menu {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgb(30 28 24 / 12%);
+  max-height: 16rem;
+  overflow: auto;
+}
+.listbox-option {
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.listbox-option:hover,
+.listbox-option:focus-visible {
+  background: var(--inset);
+  outline: none;
+}
+.listbox-option.is-selected {
+  background: color-mix(in srgb, var(--primary) 14%, #fff);
+  color: var(--text);
+}
+.listbox-option.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 
 button.btn,
 button.ghost,
@@ -538,6 +606,25 @@ a.ghost,
 .choice button {
   font: inherit;
   font-weight: 650;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+button.btn:hover,
+a.btn:hover,
+button.ghost:hover,
+a.ghost:hover {
+  transform: translateY(-1px);
+}
+button.btn:active,
+a.btn:active,
+button.ghost:active,
+a.ghost:active,
+.choice button:active {
+  transform: translateY(1px) scale(0.985);
 }
 button.ghost,
 a.ghost {
@@ -558,6 +645,44 @@ form .choice button {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+.choice-segment {
+  position: relative;
+  gap: 0;
+  padding: 4px;
+  border: 1px solid var(--app-line);
+  border-radius: 16px;
+  background: var(--inset);
+}
+.choice-segment .choice-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 12px;
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgb(30 28 24 / 12%);
+  transition: transform 0.2s ease;
+  pointer-events: none;
+}
+.choice-segment[data-role="buyer"] .choice-thumb {
+  transform: translateX(100%);
+}
+.choice-segment button {
+  position: relative;
+  z-index: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--app-muted);
+  cursor: pointer;
+}
+.choice-segment button.on {
+  color: var(--primary-ink);
+  background: transparent;
+  border-color: transparent;
+}
 .choice button {
   min-height: 48px;
   border-radius: 14px;
@@ -570,6 +695,31 @@ form .choice button {
   background: var(--primary);
   color: var(--primary-ink);
   border-color: transparent;
+}
+.choice-segment button.on {
+  background: transparent;
+}
+@media (prefers-reduced-motion: reduce) {
+  button.btn,
+  button.ghost,
+  a.btn,
+  a.ghost,
+  .choice button,
+  .choice-segment .choice-thumb,
+  .listbox-trigger {
+    transition: none;
+  }
+  button.btn:hover,
+  a.btn:hover,
+  button.ghost:hover,
+  a.ghost:hover,
+  button.btn:active,
+  a.btn:active,
+  button.ghost:active,
+  a.ghost:active,
+  .choice button:active {
+    transform: none;
+  }
 }
 
 button.act-btn,
