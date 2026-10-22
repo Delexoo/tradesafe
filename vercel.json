@@ -1,6 +1,8 @@
 {
+  "buildCommand": "node scripts/prepare-vercel.mjs",
+  "outputDirectory": "public",
   "rewrites": [
-    { "source": "/join/(.*)", "destination": "/join.html?token=$1" },
+    { "source": "/join/:token", "destination": "/join.html?token=:token" },
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
   "headers": [

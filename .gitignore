@@ -28,14 +28,19 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env — keep example
+# env ï¿½ keep example
 .env
 .env.*
 !.env.example
 
 # vercel
 .vercel
+/public
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.vercel
+.env*
+
+.env.local

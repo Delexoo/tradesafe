@@ -2,6 +2,12 @@
 
 Private, link-based live transaction rooms. **Browser website only** — open a URL, no installers.
 
+## Live site
+
+**https://tradesafe-alpha.vercel.app**
+
+GitHub: [Delexoo/tradesafe](https://github.com/Delexoo/tradesafe)
+
 ## Source you can read on GitHub
 
 The live UI is plain files under [`site/`](./site/):
@@ -18,9 +24,9 @@ The live UI is plain files under [`site/`](./site/):
 | Styles | `site/css/app.css` (Hooxie-adapted) |
 | Client JS | `site/js/*.js` |
 
-`server.mjs` serves those files and the `/api/*` JSON backend (Supabase service role stays on the server).
+`server.mjs` serves those files locally. On Vercel, `site/` is copied to `public/` and `/api/*` runs as serverless (`api/[...path].mjs`).
 
-Design language is adapted from Hooxie (`dash.css` / `site.css`): Manrope, light gray canvas, white panels, blue primary `#3b82f6`.
+Design language is adapted from Hooxie: Manrope, light gray canvas, white panels, blue primary `#3b82f6`.
 
 **Payments:** Demo mode is simulated and labeled. Stripe (optional) is an authorization hold — not licensed escrow.
 
@@ -34,6 +40,14 @@ npm run dev
 Open http://localhost:3000
 
 Env (see `.env.example`): `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DEMO_MODE=true`, `PAYMENT_PROVIDER=demo`.
+
+## Deploy
+
+Production is on Vercel. With `VERCEL_TOKEN` set:
+
+```bash
+npx vercel --prod
+```
 
 ## Scripts
 

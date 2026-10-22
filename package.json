@@ -1,9 +1,9 @@
 {
   "name": "tradesafe",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
-  "description": "TradeSafe — browser-only live transaction rooms (vanilla HTML site)",
+  "description": "TradeSafe â€” browser-only live transaction rooms (vanilla HTML site)",
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",

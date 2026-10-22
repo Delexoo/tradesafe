@@ -24,14 +24,22 @@ const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DEMO_MODE = process.env.DEMO_MODE !== "false";
 const PAYMENT_PROVIDER = process.env.PAYMENT_PROVIDER || "demo";
 
-if (!SUPABASE_URL || !ANON || !SERVICE) {
-  console.error("Missing SUPABASE_URL / ANON / SERVICE_ROLE_KEY in .env");
-  process.exit(1);
+function requireEnv() {
+  if (!SUPABASE_URL || !ANON || !SERVICE) {
+    throw new Error("Missing SUPABASE_URL / ANON / SERVICE_ROLE_KEY");
+  }
 }
 
-const admin = createClient(SUPABASE_URL, SERVICE, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+let admin;
+function getAdmin() {
+  if (!admin) {
+    requireEnv();
+    admin = createClient(SUPABASE_URL, SERVICE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+  }
+  return admin;
+}
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -44,9 +52,11 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 
-const server = http.createServer(async (req, res) => {
+async function appHandler(req, res) {
   try {
-    const url = new URL(req.url || "/", `http://${req.headers.host}`);
+    const host = req.headers.host || "localhost";
+    const proto = req.headers["x-forwarded-proto"] || "http";
+    const url = new URL(req.url || "/", `${proto}://${host}`);
     if (url.pathname.startsWith("/api/")) {
       await handleApi(req, res, url);
       return;
@@ -56,12 +66,21 @@ const server = http.createServer(async (req, res) => {
     console.error(err);
     json(res, 500, { error: err.message || "Server error" });
   }
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`TradeSafe (vanilla) http://localhost:${PORT}`);
-  console.log(`DEMO_MODE=${DEMO_MODE} PAYMENT_PROVIDER=${PAYMENT_PROVIDER}`);
-});
+const isServerless = Boolean(process.env.VERCEL || process.env.VERCEL_ENV);
+
+if (!isServerless) {
+  requireEnv();
+  const server = http.createServer(appHandler);
+  server.listen(PORT, () => {
+    console.log(`TradeSafe (vanilla) http://localhost:${PORT}`);
+    console.log(`DEMO_MODE=${DEMO_MODE} PAYMENT_PROVIDER=${PAYMENT_PROVIDER}`);
+  });
+}
+
+export default appHandler;
+export { appHandler, handleApi, getAdmin };
 
 function loadEnv(file) {
   if (!fs.existsSync(file)) return;
@@ -230,7 +249,7 @@ async function handleApi(req, res, url) {
       return;
     }
     const raw = randomBytes(32).toString("base64url");
-    await admin.from("ts_invitations").insert({
+    await getAdmin().from("ts_invitations").insert({
       transaction_id: body.transactionId,
       token_hash: hashToken(raw),
       role: body.role || "buyer",
@@ -248,7 +267,7 @@ async function userFromAuth(req) {
   const h = req.headers.authorization || "";
   const token = h.startsWith("Bearer ") ? h.slice(7) : null;
   if (!token) return null;
-  const { data, error } = await admin.auth.getUser(token);
+  const { data, error } = await getAdmin().auth.getUser(token);
   if (error || !data.user) return null;
   return data.user;
 }
@@ -260,7 +279,7 @@ async function ensureProfile(user) {
     .eq("id", user.id)
     .maybeSingle();
   if (!data) {
-    await admin.from("ts_profiles").insert({
+    await getAdmin().from("ts_profiles").insert({
       id: user.id,
       display_name:
         user.user_metadata?.display_name ||
@@ -309,7 +328,7 @@ async function createTrade(user, input) {
     .single();
   if (error) throw new Error(error.message);
 
-  await admin.from("ts_participants").insert([
+  await getAdmin().from("ts_participants").insert([
     {
       transaction_id: tx.id,
       user_id: user.id,
@@ -322,7 +341,7 @@ async function createTrade(user, input) {
     { transaction_id: tx.id, user_id: null, role: other, status: "pending" },
   ]);
 
-  await admin.from("ts_terms_versions").insert({
+  await getAdmin().from("ts_terms_versions").insert({
     transaction_id: tx.id,
     version: 1,
     body: termsBody,
@@ -330,7 +349,7 @@ async function createTrade(user, input) {
   });
 
   const milestones = defaultMilestones(input.category || "other");
-  await admin.from("ts_milestones").insert(
+  await getAdmin().from("ts_milestones").insert(
     milestones.map((m, i) => ({
       transaction_id: tx.id,
       ...m,
@@ -339,14 +358,14 @@ async function createTrade(user, input) {
     })),
   );
 
-  await admin.from("ts_fulfillments").insert({
+  await getAdmin().from("ts_fulfillments").insert({
     transaction_id: tx.id,
     method: input.delivery_method || "other",
     status: "not_started",
   });
 
   const raw = randomBytes(32).toString("base64url");
-  await admin.from("ts_invitations").insert({
+  await getAdmin().from("ts_invitations").insert({
     transaction_id: tx.id,
     token_hash: hashToken(raw),
     role: other,
@@ -355,7 +374,7 @@ async function createTrade(user, input) {
     max_uses: 10,
   });
 
-  await admin.from("ts_events").insert({
+  await getAdmin().from("ts_events").insert({
     transaction_id: tx.id,
     actor_id: user.id,
     event_type: "transaction_created",
@@ -421,12 +440,12 @@ async function getRoom(userId, tradeId) {
     { data: events },
     { data: messages },
   ] = await Promise.all([
-    admin.from("ts_participants").select("*, ts_profiles(display_name, avatar_url)").eq("transaction_id", tradeId),
-    admin.from("ts_milestones").select("*").eq("transaction_id", tradeId).order("sort_order"),
-    admin.from("ts_payments").select("*").eq("transaction_id", tradeId).order("created_at", { ascending: false }),
-    admin.from("ts_fulfillments").select("*").eq("transaction_id", tradeId).maybeSingle(),
-    admin.from("ts_events").select("*").eq("transaction_id", tradeId).order("created_at", { ascending: false }).limit(100),
-    admin.from("ts_messages").select("*, ts_profiles(display_name, avatar_url)").eq("transaction_id", tradeId).order("created_at", { ascending: true }).limit(200),
+    getAdmin().from("ts_participants").select("*, ts_profiles(display_name, avatar_url)").eq("transaction_id", tradeId),
+    getAdmin().from("ts_milestones").select("*").eq("transaction_id", tradeId).order("sort_order"),
+    getAdmin().from("ts_payments").select("*").eq("transaction_id", tradeId).order("created_at", { ascending: false }),
+    getAdmin().from("ts_fulfillments").select("*").eq("transaction_id", tradeId).maybeSingle(),
+    getAdmin().from("ts_events").select("*").eq("transaction_id", tradeId).order("created_at", { ascending: false }).limit(100),
+    getAdmin().from("ts_messages").select("*, ts_profiles(display_name, avatar_url)").eq("transaction_id", tradeId).order("created_at", { ascending: true }).limit(200),
   ]);
 
   return {
@@ -463,7 +482,7 @@ async function acceptTerms(userId, tradeId) {
     })
     .eq("transaction_id", tradeId)
     .eq("key", key);
-  await admin.from("ts_events").insert({
+  await getAdmin().from("ts_events").insert({
     transaction_id: tradeId,
     actor_id: userId,
     event_type: "terms_accepted",
@@ -528,7 +547,7 @@ async function joinInvite(userId, token) {
       })
       .eq("id", slot.id);
   } else {
-    await admin.from("ts_participants").insert({
+    await getAdmin().from("ts_participants").insert({
       transaction_id: inv.transaction_id,
       user_id: userId,
       role: inv.role,
@@ -545,7 +564,7 @@ async function joinInvite(userId, token) {
     .update({ status: "completed", completed_at: new Date().toISOString() })
     .eq("transaction_id", inv.transaction_id)
     .eq("key", "shared_parties_ready");
-  await admin.from("ts_events").insert({
+  await getAdmin().from("ts_events").insert({
     transaction_id: inv.transaction_id,
     actor_id: userId,
     event_type: "participant_joined",
@@ -565,7 +584,7 @@ async function performAction(userId, tradeId, action, payload) {
   if (action === "initiate_payment") {
     if (role !== "buyer") throw new Error("Only buyer");
     const paymentId = `demo_pi_${randomBytes(8).toString("hex")}`;
-    await admin.from("ts_payments").insert({
+    await getAdmin().from("ts_payments").insert({
       transaction_id: tradeId,
       provider: isDemo ? "demo" : PAYMENT_PROVIDER,
       provider_payment_id: paymentId,
@@ -587,7 +606,7 @@ async function performAction(userId, tradeId, action, payload) {
       })
       .eq("transaction_id", tradeId)
       .eq("key", "buyer_payment_initiated");
-    await admin.from("ts_events").insert({
+    await getAdmin().from("ts_events").insert({
       transaction_id: tradeId,
       actor_id: userId,
       event_type: "payment_initiated",
@@ -622,7 +641,7 @@ async function performAction(userId, tradeId, action, payload) {
       })
       .eq("transaction_id", tradeId)
       .eq("key", "buyer_payment_authorized");
-    await admin.from("ts_events").insert({
+    await getAdmin().from("ts_events").insert({
       transaction_id: tradeId,
       actor_id: userId,
       event_type: "payment_authorized",
@@ -669,7 +688,7 @@ async function performAction(userId, tradeId, action, payload) {
       .from("ts_transactions")
       .update({ status: "awaiting_confirmation" })
       .eq("id", tradeId);
-    await admin.from("ts_events").insert({
+    await getAdmin().from("ts_events").insert({
       transaction_id: tradeId,
       actor_id: userId,
       event_type: "fulfillment_shipped",
@@ -724,7 +743,7 @@ async function performAction(userId, tradeId, action, payload) {
         })
         .eq("transaction_id", tradeId)
         .eq("key", "shared_trade_completed");
-      await admin.from("ts_events").insert({
+      await getAdmin().from("ts_events").insert({
         transaction_id: tradeId,
         event_type: "completed",
         summary: "DEMO: Transaction completed (simulated capture)",
@@ -741,7 +760,7 @@ async function performAction(userId, tradeId, action, payload) {
   }
 
   if (action === "open_dispute") {
-    await admin.from("ts_disputes").insert({
+    await getAdmin().from("ts_disputes").insert({
       transaction_id: tradeId,
       opened_by: userId,
       reason: payload.reason || "Dispute",
@@ -752,7 +771,7 @@ async function performAction(userId, tradeId, action, payload) {
       .from("ts_transactions")
       .update({ status: "disputed" })
       .eq("id", tradeId);
-    await admin.from("ts_events").insert({
+    await getAdmin().from("ts_events").insert({
       transaction_id: tradeId,
       actor_id: userId,
       event_type: "dispute_opened",

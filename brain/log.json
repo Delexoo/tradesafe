@@ -3,6 +3,31 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.2",
+      "date": "2026-10-22",
+      "title": "Live Vercel deploy linked from the repo",
+      "sections": [
+        {
+          "heading": "Landing",
+          "added": [
+            "README and the GitHub repo point to the production site at https://tradesafe-alpha.vercel.app."
+          ]
+        },
+        {
+          "heading": "API",
+          "added": [
+            "Vercel serves site/ as static public/ and runs /api/* through a serverless catch-all that reuses server.mjs handlers."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Supabase auth allow-list includes the Vercel production URL so login and signup work on the deployed site."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.1",
       "date": "2026-10-22",
       "title": "Vanilla HTML site with Hooxie design",
