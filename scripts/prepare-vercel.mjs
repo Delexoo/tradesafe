@@ -6,9 +6,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const site = path.join(root, "site");
 const pub = path.join(root, "public");
 
-fs.rmSync(pub, { recursive: true, force: true });
+fs.mkdirSync(pub, { recursive: true });
 fs.cpSync(site, pub, { recursive: true });
-// Avoid nested vercel config confusing the deploy
+// Avoid nested vercel config confusing the deploy.
+// Do not delete public/ first: Vercel still traces files that were uploaded there.
 const nested = path.join(pub, "vercel.json");
 if (fs.existsSync(nested)) fs.unlinkSync(nested);
 

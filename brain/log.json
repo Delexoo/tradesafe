@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.10",
+      "date": "2026-10-22",
+      "title": "Let the Vercel production build finish",
+      "sections": [
+        {
+          "heading": "Design",
+          "fixes": [
+            "The Vercel build keeps existing public files while copying the site, so production deploys no longer fail before the live site updates."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.9",
       "date": "2026-10-22",
       "title": "Publish the live Vercel site with each update",
