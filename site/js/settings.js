@@ -1,7 +1,4 @@
-import { renderAppNav } from "./nav.js";
 import { api, ensureGuest } from "./api-client.js";
-
-renderAppNav("dashboard");
 
 const status = document.getElementById("status");
 try {

@@ -1,5 +1,4 @@
 import { api, ensureGuest } from "./api-client.js";
-import { renderAppNav } from "./nav.js";
 import {
   money,
   statusLabel,
@@ -7,8 +6,6 @@ import {
   buyerProgress,
   sellerProgress,
 } from "./format.js";
-
-renderAppNav("dashboard");
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");

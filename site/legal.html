@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Legal · TradeSafe</title>
+  <meta name="description" content="Terms, privacy, and transaction policies for TradeSafe.">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header id="site-header"></header>
+  <main id="content">
+    <h1>Legal</h1>
+    <p class="note">Draft product policies — not professionally reviewed legal advice. Version 2026-10-22.</p>
+    <div class="legal-switch" role="tablist" aria-label="Legal documents">
+      <button type="button" role="tab" id="tab-terms" data-legal="terms" aria-selected="true" aria-controls="terms">Terms</button>
+      <button type="button" role="tab" id="tab-privacy" data-legal="privacy" aria-selected="false" aria-controls="privacy">Privacy</button>
+      <button type="button" role="tab" id="tab-disputes" data-legal="disputes" aria-selected="false" aria-controls="disputes">Disputes</button>
+    </div>
+
+    <section class="legal-panel" id="terms">
+      <h2>Terms of service</h2>
+      <p>Effective 22 October 2026.</p>
+      <p>These terms cover the TradeSafe website and private live trade rooms. TradeSafe is a Delexo product. By using the site, you agree to these terms, the <a href="#privacy">privacy policy</a>, and the <a href="#disputes">transaction and dispute policies</a>.</p>
+      <h2>The service</h2>
+      <p>TradeSafe is a browser coordination tool for private trades between people who already trust each other. It is not a bank, licensed escrow agent, insurer, marketplace, or guarantor against scams.</p>
+      <h2>Guests</h2>
+      <p>You may use TradeSafe as a guest with a temporary display name and a secure guest session cookie. Display names are labels only — not proof of identity. Creating or joining a trade requires explicit acceptance of these policies. That acceptance is separate from agreeing to a specific trade’s commercial terms inside the room.</p>
+      <h2>Payments</h2>
+      <p>Any payment authorization, capture, or refund is performed by a third-party payment provider or simulated in demo mode. TradeSafe does not hold customer funds in a vault.</p>
+      <h2>Invitations</h2>
+      <p>Trade rooms are private and link-based. Invitation tokens can expire or be revoked. Private messages and evidence stay restricted to authorized participants.</p>
+      <h2>Changes</h2>
+      <p>These terms can be updated by posting a new version on this page. Continued use after the new date means you accept the update when renewed acceptance is required for create or join.</p>
+      <h2>Contact</h2>
+      <p>Questions: use the contact channel published by Delexo for TradeSafe support.</p>
+    </section>
+
+    <section class="legal-panel" id="privacy" hidden>
+      <h2>Privacy policy</h2>
+      <p>Effective 22 October 2026.</p>
+      <p>This page says what TradeSafe stores for guest and authenticated use.</p>
+      <h2>What we store</h2>
+      <ul>
+        <li>Guest session identifiers (hashed tokens) and optional display names</li>
+        <li>Trade details you enter (titles, amounts, terms summaries, chat, milestones)</li>
+        <li>Policy acceptance records (policy version, content hash, timestamp, related trade when applicable)</li>
+        <li>Invitation token hashes (raw tokens appear only in share links)</li>
+      </ul>
+      <h2>Cookies</h2>
+      <p>A secure HttpOnly cookie may identify your guest session across refreshes. It is not used as payment authorization.</p>
+      <h2>Payments</h2>
+      <p>Payment credentials are handled by the payment provider when live payments are enabled. Demo mode does not process real money.</p>
+      <h2>What we do not do</h2>
+      <p>We do not sell your data for advertising. We do not claim that TradeSafe is licensed escrow or insurance.</p>
+      <h2>Contact</h2>
+      <p>Privacy questions: Delexo TradeSafe support.</p>
+    </section>
+
+    <section class="legal-panel" id="disputes" hidden>
+      <h2>Transaction and dispute policies</h2>
+      <p>Effective 22 October 2026.</p>
+      <p>These policies describe how TradeSafe coordinates private trades. They do not make TradeSafe an escrow agent or insurer.</p>
+      <h2>Trade-specific terms</h2>
+      <p>Each trade has its own details (item or service, amount, roles, fulfillment, deadlines). Accepting platform policies does <strong>not</strong> accept those commercial terms. Each participant must review and accept the trade terms separately in the room.</p>
+      <h2>Cancellations and refunds</h2>
+      <p>Outcomes depend on trade status, participant actions, and — when enabled — the payment provider’s rules for authorization holds and captures. Demo trades simulate these states only.</p>
+      <h2>Disputes</h2>
+      <p>Participants may open a dispute from the room. TradeSafe may record evidence and status; it does not guarantee recovery of funds or resolution of scams.</p>
+      <h2>Invitations and access</h2>
+      <p>Invitations can expire or be revoked. Losing a guest session may require a new invitation. An invitation link alone does not authorize unrestricted payment release.</p>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome({ active: "Legal" });
+  </script>
+  <script>
+    (() => {
+      const ids = ["terms", "privacy", "disputes"];
+      const switchEl = document.querySelector(".legal-switch");
+      const tabs = [...document.querySelectorAll(".legal-switch [role='tab']")];
+      const panels = ids.map((id) => document.getElementById(id));
+      const alias = { tos: "terms", "transaction_dispute": "disputes", dispute: "disputes", refunds: "disputes" };
+      const show = (id, animate) => {
+        const next = ids.includes(id) ? id : "terms";
+        switchEl.style.setProperty("--legal-i", String(ids.indexOf(next)));
+        if (!switchEl.classList.contains("is-ready")) {
+          requestAnimationFrame(() => switchEl.classList.add("is-ready"));
+        }
+        for (const tab of tabs) tab.setAttribute("aria-selected", String(tab.dataset.legal === next));
+        for (const panel of panels) {
+          panel.hidden = panel.id !== next;
+          panel.classList.remove("is-in");
+        }
+        if (animate) {
+          const panel = document.getElementById(next);
+          void panel.offsetWidth;
+          panel.classList.add("is-in");
+        }
+        if (location.hash !== "#" + next) history.replaceState(null, "", "#" + next);
+      };
+      for (const tab of tabs) tab.addEventListener("click", () => {
+        show(tab.dataset.legal, true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      document.addEventListener("click", (event) => {
+        const link = event.target.closest("a[href^='#']");
+        if (!link) return;
+        const id = alias[link.getAttribute("href").slice(1)] || link.getAttribute("href").slice(1);
+        if (!ids.includes(id)) return;
+        event.preventDefault();
+        show(id, true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      let opened = false;
+      const fromLocation = () => {
+        const hash = location.hash.slice(1);
+        show(alias[hash] || hash || "terms", opened);
+        opened = true;
+      };
+      fromLocation();
+      window.addEventListener("hashchange", fromLocation);
+    })();
+  </script>
+</body>
+</html>

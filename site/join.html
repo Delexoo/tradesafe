@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html lang="en" data-appearance="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Join trade · TradeSafe</title>
-  <link rel="stylesheet" href="/css/fonts.css">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body data-page="join">
+<body class="app" data-page="join">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav" id="app-nav"></header>
-  <main id="content" class="shell">
+  <header id="site-header"></header>
+  <main id="content">
     <div class="panel narrow">
       <h1>Join a trade</h1>
-      <p class="note">No account required. Review the public summary, choose a display name, and accept the platform policies to enter the room.</p>
+      <p class="note">No account required. Review the summary, choose a display name, and accept the policies.</p>
       <p id="status" class="loading">Loading invitation…</p>
       <div id="summary" class="inset hidden" style="margin:16px 0"></div>
       <form id="join-form" class="form-stack hidden">
@@ -27,6 +30,11 @@
       </form>
     </div>
   </main>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome();
+  </script>
   <script type="module" src="/js/join.js"></script>
 </body>
 </html>

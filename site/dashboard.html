@@ -1,21 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" data-appearance="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard · TradeSafe</title>
-  <link rel="stylesheet" href="/css/fonts.css">
+  <title>My trades · TradeSafe</title>
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body data-page="dashboard">
+<body class="app" data-page="dashboard">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav" id="app-nav"></header>
-  <main id="content" class="shell">
+  <header id="site-header"></header>
+  <main id="content">
     <div class="panel">
       <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between">
         <div>
-          <h1>Dashboard</h1>
-          <p class="note">Your active trades, items awaiting action, and recent rooms.</p>
+          <h1>My trades</h1>
+          <p class="note">Rooms linked to this browser’s guest session.</p>
         </div>
         <a class="btn" href="/create.html">New trade</a>
       </div>
@@ -23,11 +26,16 @@
       <div id="list" class="rows hidden"></div>
       <div id="empty" class="empty hidden">
         <h3>No trades yet</h3>
-        <p>Create a private room and share the invite link with your counterparty.</p>
+        <p>Create a private room and share the invite link.</p>
         <p style="margin-top:16px"><a class="btn" href="/create.html">Create a trade</a></p>
       </div>
     </div>
   </main>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome({ active: "My trades" });
+  </script>
   <script type="module" src="/js/dashboard.js"></script>
 </body>
 </html>

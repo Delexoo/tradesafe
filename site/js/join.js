@@ -1,9 +1,6 @@
 import { api } from "./api-client.js";
-import { renderAppNav } from "./nav.js";
 import { money, statusLabel } from "./format.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
-
-renderAppNav("dashboard");
 
 const params = new URLSearchParams(location.search);
 const token = params.get("token") || location.pathname.split("/").pop();

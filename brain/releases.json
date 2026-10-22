@@ -3,6 +3,32 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.4",
+      "date": "2026-10-22",
+      "title": "Hooxie site chrome and legal layout",
+      "tag": "v0.1.4",
+      "sections": [
+        {
+          "heading": "Design",
+          "added": [
+            "Marketing and app pages use Hooxie’s cream site.css, Manrope font files, floating home button, and full-screen Menu overlay."
+          ]
+        },
+        {
+          "heading": "Landing",
+          "added": [
+            "The homepage hero matches Hooxie’s split CTA pattern with Create a trade and Learn more."
+          ]
+        },
+        {
+          "heading": "Security",
+          "added": [
+            "Legal policies are presented in Hooxie-style Legal tabs for Terms, Privacy, and Disputes."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.3",
       "date": "2026-10-22",
       "title": "Guest-first access with required policy acceptance",

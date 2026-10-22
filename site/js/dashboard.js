@@ -1,8 +1,5 @@
 import { api, ensureGuest } from "./api-client.js";
-import { renderAppNav } from "./nav.js";
 import { money, statusLabel } from "./format.js";
-
-renderAppNav("dashboard");
 
 const statusEl = document.getElementById("status");
 const listEl = document.getElementById("list");

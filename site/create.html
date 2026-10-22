@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html lang="en" data-appearance="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Create a trade · TradeSafe</title>
-  <link rel="stylesheet" href="/css/fonts.css">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body data-page="create">
+<body class="app" data-page="create">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav" id="app-nav"></header>
-  <main id="content" class="shell">
+  <header id="site-header"></header>
+  <main id="content">
     <div class="panel wide">
       <h1>Create a trade</h1>
-      <p class="note">Four steps — details, role, terms, then review. No payment is owed until both sides accept.</p>
+      <p class="note">Four steps — details, role, terms, then review. No account required.</p>
       <div class="wizard-steps" id="steps" aria-label="Wizard steps">
         <span class="on" data-step="0">1 Details</span>
         <span data-step="1">2 Role</span>
@@ -64,7 +67,7 @@
               <option value="seller">Seller</option>
               <option value="buyer">Buyer</option>
             </select>
-            <p class="hint">The invite link will assign the other party the opposite role.</p>
+            <p class="hint">The invite link assigns the other party the opposite role.</p>
           </div>
           <div>
             <label class="field-label" for="delivery">Delivery method</label>
@@ -92,10 +95,10 @@
           <div>
             <label class="field-label" for="display-name">Your display name</label>
             <input class="field" id="display-name" maxlength="80" required placeholder="How you’ll appear in this trade">
-            <p class="hint">Temporary guest name — not a login. You can create trades without an account.</p>
+            <p class="hint">Temporary guest name — not a login.</p>
           </div>
           <div id="policy-box"></div>
-          <p class="hint">Accepting these policies does <strong>not</strong> accept the other party’s commercial terms. Each participant must still accept the specific trade terms in the room.</p>
+          <p class="hint">Accepting platform policies does <strong>not</strong> accept the other party’s commercial terms.</p>
         </section>
         <p id="error" class="field-error hidden" role="alert"></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -118,6 +121,11 @@
       </div>
     </div>
   </main>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome({ active: "Create a trade" });
+  </script>
   <script type="module" src="/js/create.js"></script>
 </body>
 </html>

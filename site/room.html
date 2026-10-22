@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html lang="en" data-appearance="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Trade room · TradeSafe</title>
-  <link rel="stylesheet" href="/css/fonts.css">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body data-page="room">
+<body class="app" data-page="room">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav" id="app-nav"></header>
-  <main id="content" class="shell">
+  <header id="site-header"></header>
+  <main id="content">
     <div class="panel" id="room-root">
       <p class="loading" id="boot">Loading room…</p>
       <div id="room" class="hidden">
@@ -26,7 +29,7 @@
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button type="button" class="ghost btn-sm" id="share">Copy invite</button>
-            <a class="ghost btn-sm" href="/dashboard.html">Dashboard</a>
+            <a class="ghost btn-sm" href="/dashboard.html">My trades</a>
           </div>
         </div>
 
@@ -86,10 +89,15 @@
       <div id="room-error" class="empty hidden">
         <h3>Could not load this room</h3>
         <p id="room-error-text">You may not have access, or the link is invalid.</p>
-        <p style="margin-top:16px"><a class="btn" href="/dashboard.html">Back to dashboard</a></p>
+        <p style="margin-top:16px"><a class="btn" href="/dashboard.html">Back to my trades</a></p>
       </div>
     </div>
   </main>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome();
+  </script>
   <script type="module" src="/js/room.js"></script>
 </body>
 </html>

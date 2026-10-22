@@ -1,9 +1,6 @@
 import { api } from "./api-client.js";
-import { renderAppNav } from "./nav.js";
 import { money } from "./format.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
-
-renderAppNav("create");
 
 let step = 0;
 const panes = [...document.querySelectorAll("[data-pane]")];

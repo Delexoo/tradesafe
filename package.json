@@ -1,6 +1,6 @@
 {
   "name": "tradesafe",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
   "type": "module",
   "description": "TradeSafe â€” browser-only live transaction rooms (vanilla HTML site)",

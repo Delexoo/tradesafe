@@ -3,100 +3,69 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TradeSafe — Live transaction coordination</title>
-  <meta name="description" content="Private, link-based trade rooms. No account required. Browser-only — honest about payment holds and limits.">
+  <title>TradeSafe</title>
+  <meta name="description" content="Private live trade rooms in the browser. No account required. Honest about payment holds — not escrow.">
   <meta name="theme-color" content="#f4f2ee">
-  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="marketing" data-page="home">
+<body class="home">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav">
-    <a class="brand" href="/">
-      <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.2 8.4 7 9 3.8-.6 7-4 7-9V6l-7-3z"/></svg>
-      </span>
-      TradeSafe
-    </a>
-    <nav class="nav-links" aria-label="Main">
-      <a href="#how">How it works</a>
-      <a href="/terms.html">Policies</a>
-      <a href="/dashboard.html">My trades</a>
-    </nav>
-    <div class="nav-actions">
-      <a class="btn btn-sm" href="/create.html">Create a trade</a>
-    </div>
-  </header>
-
+  <header id="site-header"></header>
   <main id="content">
-    <section class="hero">
-      <p class="kicker">Private trade coordination · no account required</p>
-      <h1>TradeSafe live rooms for deals you already trust</h1>
-      <p class="lede">Create a temporary room, invite buyer and seller, track dual progress, and chat — without signing up. You’ll accept our policies only when you create or join a trade.</p>
-      <div class="cta-row">
-        <a class="btn btn-pill" href="/create.html">Create a trade</a>
-        <a class="btn btn-pill light" href="/dashboard.html">My trades</a>
-      </div>
-      <div class="alert" style="max-width:36rem;margin:2rem auto 0;text-align:left">
-        <div>
-          <strong>Security honesty</strong>
-          <p style="margin:6px 0 0">TradeSafe is not a bank, escrow agent, or insurer. Status reflects <strong>provider-authorized holds</strong> or <strong>simulated (demo)</strong> state only — never a TradeSafe vault.</p>
+    <div class="hero-pin">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1><span>Live rooms</span><span>for private trades.</span></h1>
+          <p class="lede" style="margin-top:1rem;max-width:28rem">Create a temporary room, invite the other side, track dual progress, and chat — without signing up.</p>
+          <div class="split-widget" style="margin-top:1.5rem">
+            <div class="split-track">
+              <a class="split-download" href="/create.html"><span>Create a trade</span></a>
+              <a class="split-learn" href="#how">Learn more</a>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <section class="band" id="how">
+    <section class="band" id="how" style="padding:4rem 1.25rem 2rem">
       <h2>How it works</h2>
-      <p class="note" style="margin-top:8px">Three steps from invite to completion — no marketplace browsing.</p>
-      <div class="steps">
-        <article class="step-card">
-          <div class="step-n">Step 1</div>
-          <h3>Create</h3>
-          <p>Start a private trade room with amount, terms, and roles. Accept platform policies, then share a secure invite link.</p>
+      <p class="note">Three steps. No marketplace. No account wall.</p>
+      <div class="steps" style="display:grid;gap:1rem;margin-top:1.5rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
+        <article class="step-card" style="background:var(--card);border:1px solid var(--line);border-radius:1.25rem;padding:1.25rem">
+          <p class="kicker" style="font-size:0.75rem">Step 1</p>
+          <h3 style="margin-top:0.35rem">Create</h3>
+          <p class="note" style="margin-top:0.4rem">Name the deal, set the amount, accept platform policies, share an invite link.</p>
         </article>
-        <article class="step-card">
-          <div class="step-n">Step 2</div>
-          <h3>Track</h3>
-          <p>Both sides see buyer payment progress and seller fulfillment, plus live activity and chat.</p>
+        <article class="step-card" style="background:var(--card);border:1px solid var(--line);border-radius:1.25rem;padding:1.25rem">
+          <p class="kicker" style="font-size:0.75rem">Step 2</p>
+          <h3 style="margin-top:0.35rem">Track</h3>
+          <p class="note" style="margin-top:0.4rem">Both sides see buyer payment progress and seller fulfillment, plus chat.</p>
         </article>
-        <article class="step-card">
-          <div class="step-n">Step 3</div>
-          <h3>Complete</h3>
-          <p>Confirm delivery and release per your terms. Holds are provider-authorized when enabled — not TradeSafe escrow.</p>
+        <article class="step-card" style="background:var(--card);border:1px solid var(--line);border-radius:1.25rem;padding:1.25rem">
+          <p class="kicker" style="font-size:0.75rem">Step 3</p>
+          <h3 style="margin-top:0.35rem">Complete</h3>
+          <p class="note" style="margin-top:0.4rem">Confirm delivery per your terms. Holds are provider-authorized when enabled — not a TradeSafe vault.</p>
         </article>
       </div>
     </section>
 
-    <section class="band" id="faq" style="max-width:40rem">
+    <section class="band" id="faq" style="padding:2rem 1.25rem 4rem;max-width:40rem;margin:0 auto">
       <h2>FAQ</h2>
-      <dl style="margin-top:1.5rem">
-        <div style="padding:1rem 0;border-bottom:1px solid var(--marketing-line)">
-          <dt style="font-weight:650">Do I need an account?</dt>
-          <dd style="margin:0.4rem 0 0;color:var(--marketing-muted);font-size:14px">No. Guests can create and join with a temporary display name. You’ll explicitly accept our policies before creating or joining.</dd>
-        </div>
-        <div style="padding:1rem 0;border-bottom:1px solid var(--marketing-line)">
-          <dt style="font-weight:650">Does TradeSafe hold my money in escrow?</dt>
-          <dd style="margin:0.4rem 0 0;color:var(--marketing-muted);font-size:14px">No. Demo trades are simulated. Live trades may use a payment provider authorization hold — not a TradeSafe vault.</dd>
-        </div>
-        <div style="padding:1rem 0">
-          <dt style="font-weight:650">What is demo mode?</dt>
-          <dd style="margin:0.4rem 0 0;color:var(--marketing-muted);font-size:14px">Demo trades exercise the full flow with simulated holds. They are labeled DEMO and never touch real money.</dd>
-        </div>
-      </dl>
+      <h3>Do I need an account?</h3>
+      <p class="note">No. Guests use a temporary display name. You accept policies only when creating or joining a trade.</p>
+      <h3>Is this escrow?</h3>
+      <p class="note">No. TradeSafe coordinates the room. Demo mode is simulated. Live payments use a provider authorization hold — not licensed escrow.</p>
+      <h3>Where are the policies?</h3>
+      <p class="note">Open <a href="/legal.html">Legal</a> for Terms, Privacy, and Transaction &amp; Dispute policies — same layout as our other Delexo products.</p>
     </section>
   </main>
-
-  <footer class="footer">
-    <div class="band" style="padding:0">
-      <strong style="color:var(--marketing-ink)">TradeSafe</strong>
-      <p style="margin:0.5rem 0 0">
-        <a href="/terms.html">Terms</a> ·
-        <a href="/privacy.html">Privacy</a> ·
-        <a href="/transaction-policies.html">Transaction policies</a>
-      </p>
-      <p style="margin:0.5rem 0 0">Browser-accessible web app — no download required. © <span id="y"></span></p>
-    </div>
-  </footer>
-  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome();
+  </script>
 </body>
 </html>

@@ -6,10 +6,10 @@ export function policyCheckboxHtml(id = "policy-accept") {
   <input type="checkbox" id="${id}" name="policy_accept" required>
   <span>
     I have read and agree to the
-    <a href="/terms.html" target="_blank" rel="noopener">Terms of Service</a>,
-    <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>,
+    <a href="/legal.html#terms" target="_blank" rel="noopener">Terms of Service</a>,
+    <a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>,
     and
-    <a href="/transaction-policies.html" target="_blank" rel="noopener">Transaction and Dispute Policies</a>.
+    <a href="/legal.html#disputes" target="_blank" rel="noopener">Transaction and Dispute Policies</a>.
     <em class="policy-required">Required to continue.</em>
   </span>
 </label>`;
