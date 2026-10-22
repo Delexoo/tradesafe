@@ -3,6 +3,32 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.11",
+      "date": "2026-10-22",
+      "title": "Simpler create and trade room",
+      "tag": "v0.1.11",
+      "sections": [
+        {
+          "heading": "Wizard",
+          "added": [
+            "Create a trade is one screen for the title, amount, role, and name, with extra details in a dropdown and a large create button."
+          ]
+        },
+        {
+          "heading": "Room",
+          "added": [
+            "The room shows the amount, whose turn it is, and large next-step buttons. People are smaller with an anonymous picture, and report a concern is a dropdown."
+          ]
+        },
+        {
+          "heading": "Design",
+          "added": [
+            "Dropdowns, role choices, and form buttons share the same field and button styles."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.10",
       "date": "2026-10-22",
       "title": "Let the Vercel production build finish",

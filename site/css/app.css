@@ -484,3 +484,147 @@ body[data-page="create"] .wizard-steps span.done i {
   .create-card { padding: 1.25rem 1rem 1.1rem; }
   body[data-page="create"] .wizard-steps span { font-size: 11px; }
 }
+
+select.field {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b675f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 6.2 8 10.5 12.5 6.2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 14px;
+  cursor: pointer;
+}
+
+button.btn,
+button.ghost,
+a.btn,
+a.ghost,
+.choice button {
+  font: inherit;
+  font-weight: 650;
+}
+button.ghost,
+a.ghost {
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--app-line);
+}
+form button.btn,
+form button.ghost,
+form .choice button {
+  margin-top: 0;
+  justify-self: stretch;
+}
+
+.choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.choice button {
+  min-height: 48px;
+  border-radius: 14px;
+  border: 1px solid var(--app-line);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+.choice button.on {
+  background: var(--primary);
+  color: var(--primary-ink);
+  border-color: transparent;
+}
+
+button.act-btn,
+a.act-btn {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: 16px;
+  font-size: 17px;
+}
+.act-quiet {
+  width: 100%;
+  min-height: 44px;
+}
+.actions { gap: 10px; }
+.demo-note { margin: 0 0 4px; }
+
+body[data-page="room"] main#content {
+  width: min(36rem, calc(100% - 2rem));
+  margin-inline: auto;
+}
+.room-simple { display: flex; flex-direction: column; gap: 16px; }
+.room-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+.room-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.room-amount {
+  margin: 8px 0 0;
+  font-size: 1.45rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+}
+.turn-line {
+  margin: 4px 0 0;
+  font-size: 15px;
+}
+.people-sm { gap: 6px; margin: 0; }
+.people-sm .person {
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  border-radius: 999px;
+  background: transparent;
+}
+.people-sm .person strong { font-size: 13px; font-weight: 650; }
+.people-sm .hint { margin: 0; font-size: 12px; }
+.avatar.anon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e7e4de;
+  color: #6b675f;
+  border: 0;
+}
+.avatar.anon svg { width: 16px; height: 16px; display: block; }
+
+.mini-menu {
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  background: #fff;
+}
+.mini-menu > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--app-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mini-menu > summary::-webkit-details-marker { display: none; }
+.mini-menu > summary::after { content: ""; width: 8px; height: 8px; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+.mini-menu[open] > summary::after { transform: rotate(225deg) translateY(-1px); }
+.mini-menu > :not(summary) { padding: 0 14px 14px; }
+.mini-menu .form-stack { margin-top: 0; }
+.report-menu { margin-top: 4px; }
+
+.chat-card h2 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.room-simple .chat { max-height: 180px; }
+.chat-form .btn { min-height: 42px; padding: 0 16px; }

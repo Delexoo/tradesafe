@@ -8,7 +8,7 @@
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/app.css?v=20261022d">
 </head>
 <body class="app" data-page="room">
   <a class="skip" href="#content">Skip to content</a>
@@ -16,117 +16,68 @@
   <main id="content">
     <div class="panel" id="room-root">
       <p class="loading" id="boot">Loading room…</p>
-      <div id="room" class="hidden">
-        <div class="room-top">
+      <div id="room" class="hidden room-simple">
+        <div class="room-head">
           <div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <div class="room-kicker">
               <span class="status-dot" id="live-dot"><i></i><span>Connecting</span></span>
               <span class="tag demo hidden" id="demo-tag">Demo</span>
               <span class="tag" id="status-tag">—</span>
             </div>
             <h1 id="title">—</h1>
-            <p class="note" style="margin:4px 0 0" id="ref">Ref —</p>
+            <p class="room-amount" id="amount-line"></p>
+            <p class="turn-line" id="turn-line"></p>
+            <p class="hint" id="ref">Ref —</p>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="ghost btn-sm" id="share">Copy invite</button>
-            <a class="ghost btn-sm" href="/dashboard.html">My trades</a>
-          </div>
+          <button type="button" class="ghost" id="share">Copy invite</button>
         </div>
 
-        <div class="participants" id="participants"></div>
+        <div class="participants people-sm" id="participants"></div>
 
-        <details class="confidence-card hidden" id="confidence-card">
-          <summary>
-            <span class="confidence-title">Trade Confidence</span>
-            <span class="confidence-sub">A few account and security signals to help you trade with more confidence.</span>
-          </summary>
-          <div class="confidence-body" id="confidence-body">
-            <p class="hint" id="confidence-loading">Loading signals…</p>
-          </div>
+        <details class="mini-menu hidden" id="confidence-card">
+          <summary>Trade confidence</summary>
+          <div id="confidence-body"></div>
         </details>
 
-        <div class="progress-grid" style="margin-bottom:16px">
-          <div class="progress-box">
-            <div class="progress-meta"><span>Buyer · payment progress</span><span id="buyer-pct">0%</span></div>
-            <div class="bar"><i id="buyer-bar" style="width:0%"></i></div>
-            <p class="progress-hint">Terms, authorization, and receipt confirmation</p>
-          </div>
-          <div class="progress-box">
-            <div class="progress-meta"><span>Seller · fulfillment progress</span><span id="seller-pct">0%</span></div>
-            <div class="bar seller"><i id="seller-bar" style="width:0%"></i></div>
-            <p class="progress-hint">Prep, shipment or transfer, and delivery evidence</p>
-          </div>
-        </div>
+        <div class="actions" id="actions"></div>
 
-        <div class="grid-2" style="margin-bottom:16px">
-          <section class="card">
-            <div class="card-hd"><h2>Buyer payment</h2></div>
-            <div class="card-bd" id="payment-card"></div>
-          </section>
-          <section class="card">
-            <div class="card-hd"><h2>Seller fulfillment</h2></div>
-            <div class="card-bd" id="fulfill-card"></div>
-          </section>
-        </div>
-
-        <section class="card" style="margin-bottom:16px">
-          <div class="card-hd"><h2>Timeline</h2></div>
-          <div class="card-bd"><ul class="timeline" id="timeline"></ul></div>
+        <section class="chat-card">
+          <h2>Messages</h2>
+          <div class="chat" id="chat"></div>
+          <form class="chat-form" id="chat-form">
+            <input class="field" id="chat-input" maxlength="4000" placeholder="Message" required>
+            <button class="btn" type="submit">Send</button>
+          </form>
         </section>
 
-        <div class="grid-2">
-          <section class="card">
-            <div class="card-hd"><h2>Activity</h2></div>
-            <div class="card-bd" id="activity"></div>
-          </section>
-          <section class="card">
-            <div class="card-hd"><h2>Chat</h2></div>
-            <div class="card-bd">
-              <div class="chat" id="chat"></div>
-              <form class="chat-form" id="chat-form">
-                <input class="field" id="chat-input" maxlength="4000" placeholder="Message participants…" required>
-                <button class="btn" type="submit">Send</button>
-              </form>
+        <details class="mini-menu report-menu">
+          <summary>Report a concern</summary>
+          <form id="report-form" class="form-stack">
+            <div>
+              <label class="field-label" for="report-category">Category</label>
+              <select class="field" id="report-category" required>
+                <option value="scam">Suspected scam</option>
+                <option value="impersonation">Impersonation</option>
+                <option value="suspicious">Suspicious behavior</option>
+                <option value="unauthorized_access">Unauthorized trade access</option>
+                <option value="payment">Payment-related concern</option>
+                <option value="abuse">Threats or abuse</option>
+                <option value="compromised_invite">Compromised invitation</option>
+                <option value="other">Other</option>
+              </select>
             </div>
-          </section>
-        </div>
-
-        <section class="card" style="margin-top:16px">
-          <div class="card-hd"><h2>Your actions</h2></div>
-          <div class="card-bd actions" id="actions"></div>
-        </section>
-
-        <section class="card" style="margin-top:16px">
-          <div class="card-hd"><h2>Report a concern</h2></div>
-          <div class="card-bd">
-            <p class="hint">Report scams, impersonation, suspicious behavior, unauthorized access, payment concerns, abuse, or compromised invites. Reports go to authorized security staff. Other participants will not see your report details or their IP/device data.</p>
-            <form id="report-form" class="form-stack" style="margin-top:12px">
-              <div>
-                <label class="field-label" for="report-category">Category</label>
-                <select class="field" id="report-category" required>
-                  <option value="scam">Suspected scam</option>
-                  <option value="impersonation">Impersonation</option>
-                  <option value="suspicious">Suspicious behavior</option>
-                  <option value="unauthorized_access">Unauthorized trade access</option>
-                  <option value="payment">Payment-related concern</option>
-                  <option value="abuse">Threats or abuse</option>
-                  <option value="compromised_invite">Compromised invitation / session</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div>
-                <label class="field-label" for="report-summary">Summary</label>
-                <input class="field" id="report-summary" maxlength="500" required placeholder="Brief description">
-              </div>
-              <div>
-                <label class="field-label" for="report-details">Details</label>
-                <textarea class="field" id="report-details" maxlength="5000" placeholder="Optional details"></textarea>
-              </div>
-              <p id="report-msg" class="hint hidden" role="status"></p>
-              <button type="submit" class="ghost btn-sm">Submit report</button>
-            </form>
-          </div>
-        </section>
+            <div>
+              <label class="field-label" for="report-summary">Summary</label>
+              <input class="field" id="report-summary" maxlength="500" required placeholder="What happened">
+            </div>
+            <div>
+              <label class="field-label" for="report-details">Details</label>
+              <textarea class="field" id="report-details" maxlength="5000" placeholder="Optional"></textarea>
+            </div>
+            <p id="report-msg" class="hint hidden" role="status"></p>
+            <button type="submit" class="ghost">Submit report</button>
+          </form>
+        </details>
       </div>
       <div id="room-error" class="empty hidden">
         <h3>Could not load this room</h3>
@@ -140,6 +91,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome();
   </script>
-  <script type="module" src="/js/room.js"></script>
+  <script type="module" src="/js/room.js?v=20261022d"></script>
 </body>
 </html>

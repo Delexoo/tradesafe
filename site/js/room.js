@@ -1,11 +1,7 @@
 import { api, ensureGuest } from "./api-client.js";
-import {
-  money,
-  statusLabel,
-  initials,
-  buyerProgress,
-  sellerProgress,
-} from "./format.js";
+import { money, statusLabel } from "./format.js";
+
+const ANON_AVATAR = `<span class="avatar anon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.2" fill="currentColor"/><path d="M5.2 19.2c1.1-3 3.6-4.5 6.8-4.5s5.7 1.5 6.8 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>`;
 
 const params = new URLSearchParams(location.search);
 const id = params.get("id");
@@ -44,20 +40,46 @@ async function loadRoom(userId) {
   render(data, userId || myActorId);
 }
 
+function meAccepted(data, userId) {
+  return (data.participants || []).some(
+    (p) => p.user_id === userId && p.terms_accepted_at,
+  );
+}
+
+function turnLine(tx, role, data, userId) {
+  const st = tx.status;
+  const waiting = "Waiting on the other person.";
+  if (st === "completed") return "This trade is complete.";
+  if (st === "cancelled" || st === "expired") return "This trade is closed.";
+  if (st === "disputed") return "This trade is in dispute.";
+  if (st === "refunded") return "This trade was refunded.";
+  if (st === "awaiting_acceptance") {
+    return meAccepted(data, userId)
+      ? "Waiting for the other person to accept."
+      : "Accept the trade to continue.";
+  }
+  if (st === "awaiting_payment" || st === "payment_pending") {
+    return role === "buyer" ? "Your turn to pay." : waiting;
+  }
+  if (["awaiting_fulfillment", "funds_authorized", "in_fulfillment"].includes(st)) {
+    return role === "seller" ? "Your turn to send it." : waiting;
+  }
+  if (st === "awaiting_confirmation") {
+    return role === "buyer" ? "Your turn to confirm you received it." : waiting;
+  }
+  return statusLabel(st);
+}
+
 function render(data, userId) {
   const tx = data.transaction;
   const myRole = data.myRole;
-  const bp = buyerProgress(tx, data.payment, data.milestones);
-  const sp = sellerProgress(data.fulfillment, data.milestones);
 
   document.getElementById("title").textContent = tx.title;
+  document.getElementById("amount-line").textContent = money(tx.amount_cents, tx.currency);
+  document.getElementById("turn-line").textContent = turnLine(tx, myRole, data, userId);
   document.getElementById("ref").textContent = `Ref ${tx.reference_code}`;
   document.getElementById("status-tag").textContent = statusLabel(tx.status);
   document.getElementById("demo-tag").classList.toggle("hidden", !tx.is_demo);
-  document.getElementById("buyer-pct").textContent = `${bp}%`;
-  document.getElementById("seller-pct").textContent = `${sp}%`;
-  document.getElementById("buyer-bar").style.width = `${bp}%`;
-  document.getElementById("seller-bar").style.width = `${sp}%`;
 
   const live = !["completed", "cancelled", "expired", "refunded"].includes(
     tx.status,
@@ -68,16 +90,17 @@ function render(data, userId) {
 
   document.getElementById("participants").innerHTML = (data.participants || [])
     .map((p) => {
-      const name =
-        p.display_name ||
-        p.ts_profiles?.display_name ||
-        p.role ||
-        "Pending";
       const pending = p.status !== "joined";
+      const name = pending
+        ? "Waiting"
+        : p.display_name ||
+          p.ts_profiles?.display_name ||
+          p.role ||
+          "Guest";
       return `<div class="person">
-        <span class="avatar">${initials(name)}</span>
+        ${ANON_AVATAR}
         <div>
-          <strong style="font-size:14px">${escapeHtml(name)}</strong>
+          <strong>${escapeHtml(name)}</strong>
           <div class="hint">${escapeHtml(p.role)}${pending ? " · pending" : ""}</div>
         </div>
       </div>`;
@@ -97,51 +120,14 @@ function render(data, userId) {
   }
   loadTradeConfidence();
 
-  const pay = data.payment;
-  document.getElementById("payment-card").innerHTML = `
-    <p><strong>${money(tx.amount_cents, tx.currency)}</strong></p>
-    <p class="hint">Status: ${escapeHtml(pay?.status || "none")} · Provider: ${escapeHtml(pay?.provider || (tx.is_demo ? "demo" : "—"))}</p>
-    <p class="hint">${tx.is_demo ? "Simulated (demo) — not real money." : "Provider-authorized hold when enabled — not TradeSafe escrow."}</p>
-  `;
-
-  const f = data.fulfillment;
-  document.getElementById("fulfill-card").innerHTML = `
-    <p><strong>${escapeHtml(statusLabel(f?.status || "not_started"))}</strong></p>
-    <p class="hint">Method: ${escapeHtml(f?.method || tx.delivery_method || "—")}</p>
-    ${f?.tracking_number ? `<p class="hint">Tracking: ${escapeHtml(f.tracking_number)}</p>` : ""}
-  `;
-
-  document.getElementById("timeline").innerHTML = (data.milestones || [])
-    .map((m) => {
-      const cls =
-        m.status === "completed"
-          ? "done"
-          : m.status === "active"
-            ? "active"
-            : "";
-      return `<li><span class="dot ${cls}"></span><div>
-        <strong style="font-size:14px">${escapeHtml(m.label)}</strong>
-        <div class="hint">${escapeHtml(m.track)} · ${escapeHtml(m.status)}${m.verification_source ? ` · ${escapeHtml(m.verification_source)}` : ""}</div>
-      </div></li>`;
-    })
-    .join("");
-
-  document.getElementById("activity").innerHTML = (data.events || [])
-    .slice(0, 20)
-    .map(
-      (e) =>
-        `<div class="bubble"><div class="who">${new Date(e.created_at).toLocaleString()}</div>${escapeHtml(e.summary)}</div>`,
-    )
-    .join("") || `<p class="hint">No activity yet.</p>`;
-
   document.getElementById("chat").innerHTML = (data.messages || [])
     .map((m) => {
       const name = m.ts_profiles?.display_name || "Participant";
       return `<div class="bubble"><div class="who">${escapeHtml(name)}</div>${escapeHtml(m.body)}</div>`;
     })
-    .join("");
+    .join("") || `<p class="hint">No messages yet.</p>`;
 
-  renderActions(tx, myRole, data);
+  renderActions(tx, myRole, data, userId);
   document.getElementById("share").onclick = async () => {
     try {
       const inv = await api("/api/invitations/create", {
@@ -160,36 +146,35 @@ function render(data, userId) {
   };
 }
 
-function renderActions(tx, role, data) {
+function renderActions(tx, role, data, userId) {
   const box = document.getElementById("actions");
   const buttons = [];
   const st = tx.status;
 
-  if ((role === "buyer" || role === "seller") && st === "awaiting_acceptance") {
-    buttons.push(btn("Accept terms", "accept"));
+  if (
+    (role === "buyer" || role === "seller") &&
+    st === "awaiting_acceptance" &&
+    !meAccepted(data, userId)
+  ) {
+    buttons.push(btn("Accept", "accept", "btn act-btn"));
   }
   if (role === "buyer" && (st === "awaiting_payment" || st === "payment_pending")) {
-    buttons.push(
-      btn(tx.is_demo ? "Simulate payment hold" : "Initiate payment", "pay"),
-    );
+    buttons.push(btn(tx.is_demo ? "Pay (demo)" : "Pay", "pay", "btn act-btn"));
   }
   if (role === "seller" && ["awaiting_fulfillment", "funds_authorized", "in_fulfillment"].includes(st)) {
-    buttons.push(btn("Mark preparing", "prepare", "btn-seller"));
-    buttons.push(btn("Submit tracking / proof", "track", "ghost"));
+    buttons.push(btn("I'm preparing it", "prepare", "btn act-btn"));
+    buttons.push(btn("I sent it", "track", "btn act-btn"));
   }
   if (role === "buyer" && st === "awaiting_confirmation") {
-    buttons.push(btn("Confirm receipt", "confirm", "btn-success"));
+    buttons.push(btn("I received it", "confirm", "btn act-btn"));
   }
   if (!["completed", "cancelled"].includes(st)) {
-    buttons.push(btn("Open dispute", "dispute", "btn-danger btn-sm"));
+    buttons.push(btn("Open a dispute", "dispute", "ghost act-quiet"));
   }
 
   box.innerHTML =
-    (tx.is_demo
-      ? `<div class="alert warn"><div><strong>Demo trade</strong><p style="margin:4px 0 0">Actions update simulated state only.</p></div></div>`
-      : "") +
-    (buttons.join("") || `<p class="hint">No actions available for your role right now.</p>`) +
-    `<p class="hint">Financial status changes only after provider webhooks or demo server rules.</p>`;
+    (tx.is_demo ? `<p class="hint demo-note">Demo trade. These buttons update a simulation, not real money.</p>` : "") +
+    (buttons.join("") || `<p class="hint">Nothing for you to do right now.</p>`);
 
   box.querySelectorAll("[data-act]").forEach((el) => {
     el.onclick = () => runAction(el.dataset.act, tx);

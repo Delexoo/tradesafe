@@ -1,5 +1,4 @@
-/** Pure checks for the create-trade wizard. */
-
+/** One-screen create trade. */
 export const CREATE_STEPS = [
   {
     fields: [
@@ -9,24 +8,6 @@ export const CREATE_STEPS = [
         empty: "Enter an amount greater than 0.",
         check: "amount",
       },
-    ],
-  },
-  { fields: [] },
-  {
-    fields: [
-      {
-        id: "terms",
-        empty: "Add a terms summary so both sides know the deal.",
-      },
-      {
-        id: "ack",
-        empty: "Confirm that TradeSafe does not provide escrow or insurance.",
-        check: "checked",
-      },
-    ],
-  },
-  {
-    fields: [
       {
         id: "display-name",
         empty: "Enter the name you want shown in this trade.",

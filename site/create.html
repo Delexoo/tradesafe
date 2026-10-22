@@ -8,7 +8,7 @@
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/css/app.css?v=20261022c">
+  <link rel="stylesheet" href="/css/app.css?v=20261022d">
 </head>
 <body class="app" data-page="create">
   <a class="skip" href="#content">Skip to content</a>
@@ -17,112 +17,88 @@
     <div class="panel create-card" id="wizard">
       <div class="create-intro">
         <h1>Create a trade</h1>
-        <p class="note">Four steps — details, role, terms, then review. No account required.</p>
-      </div>
-      <div class="wizard-steps" id="steps" aria-label="Wizard steps">
-        <span class="on" data-step="0"><i>1</i> Details</span>
-        <span data-step="1"><i>2</i> Role</span>
-        <span data-step="2"><i>3</i> Terms</span>
-        <span data-step="3"><i>4</i> Review</span>
+        <p class="note">Name the deal, pick a side, and invite the other person.</p>
       </div>
       <form id="create-form" class="form-stack" novalidate>
-        <section data-pane="0" class="form-stack">
+        <div>
+          <label class="field-label" for="title">What are you trading?</label>
+          <input class="field" id="title" name="title" maxlength="200" autocomplete="off" placeholder="Vintage camera">
+          <p class="field-error hidden" data-error-for="title"></p>
+        </div>
+        <div class="form-row cols-2">
           <div>
-            <label class="field-label" for="title">Trade title</label>
-            <input class="field" id="title" name="title" maxlength="200" autocomplete="off" placeholder="e.g. Vintage camera sale">
-            <p class="field-error hidden" data-error-for="title"></p>
+            <label class="field-label" for="amount">Amount</label>
+            <input class="field" id="amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+            <p class="field-error hidden" data-error-for="amount"></p>
           </div>
           <div>
-            <label class="field-label" for="description">Description</label>
-            <textarea class="field" id="description" name="description" maxlength="5000" placeholder="What is being traded?"></textarea>
-            <p class="hint">Optional.</p>
+            <label class="field-label" for="currency">Currency</label>
+            <select class="field" id="currency" name="currency">
+              <option value="usd">USD</option>
+              <option value="eur">EUR</option>
+              <option value="gbp">GBP</option>
+            </select>
           </div>
-          <div class="form-row cols-2">
+        </div>
+        <div>
+          <span class="field-label">You are the</span>
+          <div class="choice" role="group" aria-label="Your role">
+            <button type="button" class="on" data-role="seller" aria-pressed="true">Seller</button>
+            <button type="button" data-role="buyer" aria-pressed="false">Buyer</button>
+          </div>
+          <input type="hidden" id="role" value="seller">
+          <p class="hint">The invite gives the other person the opposite role.</p>
+        </div>
+        <div>
+          <label class="field-label" for="display-name">Your name in this trade</label>
+          <input class="field" id="display-name" name="display-name" maxlength="80" autocomplete="nickname" placeholder="Alex">
+          <p class="field-error hidden" data-error-for="display-name"></p>
+        </div>
+        <details class="mini-menu">
+          <summary>More details</summary>
+          <div class="form-stack">
             <div>
-              <label class="field-label" for="amount">Amount</label>
-              <input class="field" id="amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
-              <p class="field-error hidden" data-error-for="amount"></p>
+              <label class="field-label" for="description">Description</label>
+              <textarea class="field" id="description" maxlength="5000" placeholder="Optional"></textarea>
             </div>
             <div>
-              <label class="field-label" for="currency">Currency</label>
-              <select class="field" id="currency" name="currency">
-                <option value="usd">USD</option>
-                <option value="eur">EUR</option>
-                <option value="gbp">GBP</option>
+              <label class="field-label" for="category">Category</label>
+              <select class="field" id="category">
+                <option value="other" selected>Other</option>
+                <option value="physical">Physical goods</option>
+                <option value="digital">Digital</option>
+                <option value="electronics">Electronics</option>
+                <option value="collectibles">Collectibles</option>
+                <option value="website_domain">Website / domain</option>
+                <option value="service">Service</option>
               </select>
             </div>
+            <div>
+              <label class="field-label" for="delivery">How it is delivered</label>
+              <select class="field" id="delivery">
+                <option value="other" selected>Other</option>
+                <option value="shipping">Shipping</option>
+                <option value="digital_transfer">Digital transfer</option>
+                <option value="pickup">Pickup</option>
+                <option value="in_person">In person</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="terms">Terms</label>
+              <textarea class="field" id="terms" maxlength="5000" placeholder="Optional"></textarea>
+            </div>
           </div>
-          <div>
-            <label class="field-label" for="category">Category</label>
-            <select class="field" id="category" name="category">
-              <option value="physical">Physical goods</option>
-              <option value="digital">Digital</option>
-              <option value="electronics">Electronics</option>
-              <option value="collectibles">Collectibles</option>
-              <option value="website_domain">Website / domain</option>
-              <option value="service">Service</option>
-              <option value="other" selected>Other</option>
-            </select>
-          </div>
-        </section>
-        <section data-pane="1" class="form-stack hidden">
-          <div>
-            <label class="field-label" for="role">Your role</label>
-            <select class="field" id="role" name="role">
-              <option value="seller">Seller</option>
-              <option value="buyer">Buyer</option>
-            </select>
-            <p class="hint">The invite link assigns the other party the opposite role.</p>
-          </div>
-          <div>
-            <label class="field-label" for="delivery">Delivery method</label>
-            <select class="field" id="delivery" name="delivery">
-              <option value="shipping">Shipping</option>
-              <option value="digital_transfer">Digital transfer</option>
-              <option value="pickup">Pickup</option>
-              <option value="in_person">In person</option>
-              <option value="other" selected>Other</option>
-            </select>
-          </div>
-        </section>
-        <section data-pane="2" class="form-stack hidden">
-          <div>
-            <label class="field-label" for="terms">Terms summary</label>
-            <textarea class="field" id="terms" name="terms" maxlength="5000" placeholder="Completion conditions, dispute notes, cancellation…"></textarea>
-            <p class="field-error hidden" data-error-for="terms"></p>
-          </div>
-          <label class="policy-accept check-card" for="ack">
-            <input type="checkbox" id="ack" name="ack">
-            <span>I acknowledge TradeSafe coordinates this deal and does not provide licensed escrow or insurance.</span>
-          </label>
-          <p class="field-error hidden" data-error-for="ack"></p>
-        </section>
-        <section data-pane="3" class="form-stack hidden">
-          <div class="inset" id="review"></div>
-          <div>
-            <label class="field-label" for="display-name">Your display name</label>
-            <input class="field" id="display-name" name="display-name" maxlength="80" autocomplete="nickname" placeholder="How you’ll appear in this trade">
-            <p class="hint">Temporary guest name — not a login.</p>
-            <p class="field-error hidden" data-error-for="display-name"></p>
-          </div>
-          <div id="policy-box"></div>
-          <p class="field-error hidden" data-error-for="policy-accept"></p>
-          <p class="hint">Accepting platform policies does <strong>not</strong> accept the other party’s commercial terms.</p>
-        </section>
+        </details>
+        <div id="policy-box"></div>
+        <p class="field-error hidden" data-error-for="policy-accept"></p>
+        <p class="hint">TradeSafe does not hold the money.</p>
         <p id="error" class="field-error hidden" role="alert"></p>
-        <div class="wizard-actions">
-          <button type="button" class="ghost" id="back" hidden>Back</button>
-          <button type="button" class="btn" id="next">Continue</button>
-        </div>
+        <button type="button" class="btn act-btn" id="next">Create trade</button>
       </form>
     </div>
     <div id="created" class="panel create-card create-success hidden">
-      <div class="alert" style="text-align:left">
-        <div>
-          <strong>Trade created</strong>
-          <p style="margin:6px 0 0">Share this invite link once. The raw token is shown only here.</p>
-        </div>
-      </div>
+      <h1>Trade created</h1>
+      <p class="note">Send this invite once. It is shown only here.</p>
       <div class="invite-row">
         <input class="field" id="invite-url" readonly aria-label="Invite link">
         <button type="button" class="ghost" id="copy-invite">Copy link</button>
@@ -136,6 +112,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome({ active: "Create a trade" });
   </script>
-  <script type="module" src="/js/create.js?v=20261022c"></script>
+  <script type="module" src="/js/create.js?v=20261022d"></script>
 </body>
 </html>

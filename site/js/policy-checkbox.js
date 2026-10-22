@@ -3,13 +3,16 @@
 export function policyCheckboxHtml(ids = {}) {
   const requiredId = ids.required || "policy-accept";
   const optionalId = ids.optional || "device-optional";
-  return `
-<div class="policy-block">
-  <p class="hint policy-explain">
+  const explain = ids.compact
+    ? `<p class="hint policy-explain">Accept the policies to create this trade. TradeSafe does not hold the money.</p>`
+    : `<p class="hint policy-explain">
     TradeSafe collects security information to protect trades against fraud, unauthorized access, and abuse.
     <strong>Required</strong> signals include a hashed network reference (not sold), session identifiers, and security-event logs reviewed by authorized staff when investigating reports or incidents.
     Data is retained only as long as needed for security and legal obligations (typically up to 24 months unless a legal hold applies). Processors such as hosting and database providers may process data as disclosed in the Privacy Policy. We do not sell your data.
-  </p>
+  </p>`;
+  return `
+<div class="policy-block">
+  ${explain}
   <label class="policy-accept" for="${requiredId}">
     <input type="checkbox" id="${requiredId}" name="policy_accept">
     <span>
