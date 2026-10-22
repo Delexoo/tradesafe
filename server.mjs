@@ -270,7 +270,7 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/auth/email-handoff" && req.method === "POST") {
     try {
-      await rateLimitOrThrow(req, "email_handoff", 15, 60_000);
+      await rateLimitOrThrow(req, "email_handoff", 20, 60_000);
       const body = req._body || (await readJson(req));
       json(res, 200, await createEmailHandoff(getAdmin(), body), req);
     } catch (err) {
@@ -281,7 +281,8 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/auth/email-handoff/complete" && req.method === "POST") {
     try {
-      await rateLimitOrThrow(req, "email_handoff_complete", 30, 60_000);
+      // Complete is rare; allow retries if the mail client opens the link twice.
+      await rateLimitOrThrow(req, "email_handoff_complete", 60, 60_000);
       const body = req._body || (await readJson(req));
       json(
         res,
@@ -301,7 +302,8 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/auth/email-handoff/claim" && req.method === "POST") {
     try {
-      await rateLimitOrThrow(req, "email_handoff_claim", 30, 60_000);
+      // Claim is polled every few seconds for up to 15 minutes — must not starve.
+      await rateLimitOrThrow(req, "email_handoff_claim", 240, 60_000);
       const body = req._body || (await readJson(req));
       json(res, 200, await claimEmailHandoff(getAdmin(), body), req);
     } catch (err) {

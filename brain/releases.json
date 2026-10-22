@@ -3,6 +3,20 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.20",
+      "date": "2026-10-22",
+      "title": "Email verify works again under rate limits",
+      "tag": "v0.1.20",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Email handoff claim polling is no longer blocked by the new rate limit after about a minute, so opening the magic link signs the waiting device back in."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.19",
       "date": "2026-10-22",
       "title": "RLS lockdown, rate limits, and security headers",

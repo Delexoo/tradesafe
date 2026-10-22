@@ -78,12 +78,15 @@ function watch(stored) {
         }
         if (result.status === "expired" || Date.now() - started > WAIT_MS) finish(null);
       } catch (err) {
-        if (err.status === 404 || err.status === 400) finish(null);
+        // 429: keep polling (claim is intentionally frequent).
+        if (err.status === 404 || err.status === 400 || err.status === 410) {
+          finish(null);
+        }
       } finally {
         busy = false;
       }
     };
-    timer = setInterval(tick, 2000);
+    timer = setInterval(tick, 3000);
     tick();
   });
   return watching;
@@ -145,12 +148,7 @@ async function adoptSession() {
   if (code) await sb.auth.exchangeCodeForSession(code).catch(() => {});
 }
 
-/** The browser that opened the email link gives the session back to the requester. */
-export async function finishEmailHandoff(loginId) {
-  await adoptSession();
-  const session = await getSession();
-  if (!session?.access_token || !session.refresh_token) return { ok: false };
-  if (!loginId) return { ok: true };
+async function postComplete(loginId, session) {
   const res = await fetch("/api/auth/email-handoff/complete", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -160,6 +158,21 @@ export async function finishEmailHandoff(loginId) {
       refresh_token: session.refresh_token,
     }),
   });
+  return res;
+}
+
+/** The browser that opened the email link gives the session back to the requester. */
+export async function finishEmailHandoff(loginId) {
+  await adoptSession();
+  const session = await getSession();
+  if (!session?.access_token || !session.refresh_token) return { ok: false };
+  if (!loginId) return { ok: true };
+  let res = await postComplete(loginId, session);
+  // Brief backoff if the opener hit a transient rate limit.
+  if (res.status === 429) {
+    await new Promise((r) => setTimeout(r, 1200));
+    res = await postComplete(loginId, session);
+  }
   if (!res.ok) return { ok: false, signedInHere: true };
   return { ok: true };
 }
