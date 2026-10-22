@@ -3,6 +3,32 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.25",
+      "date": "2026-10-22",
+      "title": "Hero room animation and full Settings with login",
+      "sections": [
+        {
+          "heading": "Landing",
+          "added": [
+            "The home hero uses TradeSafe branding and an animated buyer/seller progress preview instead of the old widget pill morph."
+          ]
+        },
+        {
+          "heading": "Settings",
+          "added": [
+            "Settings is a full page for display name, email, payouts, and sign out when you have an account.",
+            "Without a verified email account, Settings shows Log in / Sign up instead of a guest-only screen."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "The Account panel spacing and Settings / Sign out buttons are clearer."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.24",
       "date": "2026-10-22",
       "title": "Account panel Settings and Home in menu",

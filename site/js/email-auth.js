@@ -24,9 +24,11 @@ export function authPanelHtml(mode = "login") {
         <p class="auth-status" role="status" hidden></p>
       </form>
       <div class="auth-account" hidden>
-        <p class="auth-lede">Signed in as <strong class="auth-email-label"></strong></p>
-        <a class="auth-submit auth-settings" href="/settings.html">Settings</a>
-        <button class="auth-submit auth-sign-out" type="button" data-sign-out>Sign out</button>
+        <p class="auth-account-email">Signed in as <strong class="auth-email-label"></strong></p>
+        <div class="auth-account-actions">
+          <a class="auth-submit auth-settings" href="/settings.html">Settings</a>
+          <button class="auth-submit auth-sign-out" type="button" data-sign-out>Sign out</button>
+        </div>
       </div>
     </div>
   `;

@@ -41,6 +41,44 @@ body.app main#content {
 }
 .panel.wide { width: 100%; }
 .panel.narrow { max-width: 28rem; margin-inline: auto; }
+
+body[data-page="settings"] main#content {
+  width: min(28rem, calc(100% - 2rem));
+  margin-inline: auto;
+  padding: 5.2rem 0 2rem;
+}
+.settings-tabs {
+  margin-top: 1.1rem;
+}
+.settings-panel .settings-block {
+  margin-top: 1.75rem;
+  padding-top: 1.35rem;
+  border-top: 1px solid var(--app-line);
+}
+.settings-h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
+}
+.settings-email {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--app-line);
+  border-radius: 12px;
+  background: var(--app-bg, #f4f2ee);
+  font-weight: 600;
+  word-break: break-word;
+}
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+.settings-actions .ghost {
+  flex: 1 1 auto;
+  min-width: 8rem;
+}
 .panel h1 {
   margin: 0;
   font-size: clamp(1.6rem, 3vw, 2rem);
@@ -376,17 +414,6 @@ textarea.field { min-height: 96px; resize: vertical; }
   letter-spacing: -0.02em;
 }
 .card-bd { padding: 14px; }
-
-/* TradeSafe split CTA is longer than Hooxie Download */
-.home .split-widget { --split-w: min(19rem, calc(100vw - 2.4rem)); }
-.home .split-download { width: 9.4rem; }
-@keyframes download-pill-ts {
-  0% { width: calc(var(--split-h) - 0.44rem); transform: scale(0.15); }
-  24% { width: calc(var(--split-h) - 0.44rem); transform: scale(1.12); }
-  38% { width: calc(var(--split-h) - 0.44rem); transform: scale(1); }
-  100% { width: 9.4rem; transform: scale(1); }
-}
-.home .split-download { animation-name: download-pill-ts; }
 
 /* Create-trade wizard: one centered column, matching footer */
 body[data-page="login"] main#content,

@@ -157,7 +157,7 @@ header.is-open .login-toggle {
 .auth-screen[hidden] { display: none !important; }
 .auth-card {
   width: min(24rem, 100%);
-  padding: 1.35rem 1.25rem 1.2rem;
+  padding: 1.5rem 1.35rem 1.4rem;
   border-radius: 1.4rem;
   background: #fff;
   color: var(--ink);
@@ -224,28 +224,59 @@ header.is-open .login-toggle {
   box-shadow: 0 0 0 3px rgb(59 130 246 / 18%);
 }
 .auth-submit {
-  min-height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
   border: 0;
   border-radius: 0.9rem;
   background: #3b82f6;
   color: #fff;
   font: inherit;
+  font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  box-sizing: border-box;
   cursor: pointer;
 }
 .auth-submit:disabled { opacity: 0.55; cursor: wait; }
 .auth-error { margin: 0; color: #b42318; font-size: 0.9rem; font-weight: 650; }
 .auth-status { margin: 0; color: #1d4ed8; font-size: 0.92rem; }
-.auth-account { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.auth-account {
+  margin-top: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+.auth-account-email {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.auth-account-email strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+.auth-account-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
 .auth-settings {
   text-decoration: none;
-  text-align: center;
-  box-sizing: border-box;
 }
 .auth-sign-out {
-  background: transparent;
+  background: #fff;
   color: var(--ink);
   box-shadow: inset 0 0 0 1.5px var(--line);
+}
+.auth-sign-out:hover {
+  background: var(--bg);
 }
 
 .menu-label { line-height: 1; }
@@ -417,6 +448,172 @@ main {
   margin-inline: auto;
   text-align: center;
   container-type: inline-size;
+}
+
+.hero-brand {
+  margin: 0 0 0.85rem;
+  color: var(--ink);
+  font-size: clamp(1.85rem, 5vw, 2.65rem);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 1;
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-lede {
+  margin-top: 1rem;
+  max-width: 28rem;
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+}
+
+.hero h1 {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.04s both;
+}
+
+.hero-room {
+  width: min(22rem, 100%);
+  margin-top: 1.65rem;
+  padding: 1rem 1.05rem 0.95rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 40px rgb(28 27 25 / 8%);
+  text-align: left;
+  animation: hero-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both;
+}
+
+.hero-room-rail + .hero-room-rail {
+  margin-top: 0.85rem;
+}
+
+.hero-room-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.hero-room-track {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.hero-room-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  transform-origin: left center;
+}
+
+.hero-room-fill--buyer {
+  background: #2563eb;
+  animation: hero-fill-buyer 2.4s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+}
+
+.hero-room-fill--seller {
+  background: #0f766e;
+  animation: hero-fill-seller 2.6s cubic-bezier(0.22, 1, 0.36, 1) 0.85s both;
+}
+
+.hero-room-pulse {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.hero-room-pulse span {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgb(22 163 74 / 45%);
+  animation: hero-live 1.8s ease-out infinite;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1.1rem;
+  margin-top: 1.5rem;
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.85rem;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fffcf8;
+  font-size: 0.95rem;
+  font-weight: 650;
+  text-decoration: none;
+  box-shadow: 0 10px 28px rgb(28 27 25 / 14%);
+  transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.hero-cta:hover {
+  background: #2a2926;
+  transform: translateY(-1px);
+}
+
+.hero-cta:active {
+  transform: translateY(0);
+}
+
+.hero-link {
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 650;
+  text-decoration: none;
+  border-bottom: 1.5px solid rgb(28 27 25 / 22%);
+}
+
+.hero-link:hover {
+  border-bottom-color: var(--ink);
+}
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.85rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-fill-buyer {
+  0% { width: 0; }
+  55% { width: 72%; }
+  100% { width: 68%; }
+}
+
+@keyframes hero-fill-seller {
+  0% { width: 0; }
+  60% { width: 48%; }
+  100% { width: 52%; }
+}
+
+@keyframes hero-live {
+  0% { box-shadow: 0 0 0 0 rgb(22 163 74 / 45%); }
+  70% { box-shadow: 0 0 0 0.55rem rgb(22 163 74 / 0%); }
+  100% { box-shadow: 0 0 0 0 rgb(22 163 74 / 0%); }
 }
 
 .home .band,
@@ -1980,13 +2177,24 @@ main.docs-page .lede { max-width: 34rem; margin-bottom: 1.8rem; }
   .split-track,
   .split-learn,
   .split-download,
-  .split-download span {
+  .split-download span,
+  .hero-brand,
+  .hero-lede,
+  .hero h1,
+  .hero-room,
+  .hero-actions,
+  .hero-room-fill--buyer,
+  .hero-room-fill--seller,
+  .hero-room-pulse span {
     animation: none;
     opacity: 1;
     translate: 0 0;
     transform: none;
   }
   .split-widget { width: var(--split-w); }
+  .hero-room-fill--buyer { width: 68%; }
+  .hero-room-fill--seller { width: 52%; }
+  .hero-room-pulse span { box-shadow: none; }
   .hero { position: relative; height: auto; min-height: 100svh; }
   .hero-pin { padding-bottom: 0; }
   .demo-story { height: auto; }

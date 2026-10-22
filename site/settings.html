@@ -10,20 +10,85 @@
   <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="app">
+<body class="app" data-page="settings">
   <a class="skip" href="#content">Skip to content</a>
   <header id="site-header"></header>
   <main id="content">
-    <div class="panel narrow">
-      <h1>Session</h1>
-      <p class="note" id="status">Loading…</p>
-      <p class="hint" style="margin-top:12px">Guest sessions use a secure cookie in this browser. Policies live under <a href="/legal.html">Legal</a>.</p>
+    <div class="panel narrow settings-panel" id="settings-root">
+      <div id="auth-gate">
+        <h1 id="auth-title">Log in or sign up</h1>
+        <p class="note" id="auth-lede">Email only. No password. Settings unlock after you verify your email.</p>
+        <div class="auth-tabs settings-tabs" role="tablist" aria-label="Account">
+          <button type="button" class="auth-tab" role="tab" data-auth-mode="login" aria-selected="true">Log in</button>
+          <button type="button" class="auth-tab" role="tab" data-auth-mode="signup" aria-selected="false">Sign up</button>
+        </div>
+        <form id="auth-form" class="form-stack">
+          <div>
+            <label class="field-label" for="auth-email">Email</label>
+            <input class="field" id="auth-email" type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@email.com">
+          </div>
+          <p id="auth-error" class="field-error hidden" role="alert"></p>
+          <p id="auth-status" class="hint hidden" role="status"></p>
+          <button class="btn" id="auth-submit" type="submit">Email me a link</button>
+        </form>
+      </div>
+
+      <div id="account-settings" hidden>
+        <h1>Settings</h1>
+        <p class="note" id="settings-lede">Manage your TradeSafe account.</p>
+
+        <section class="settings-block" id="profile-block">
+          <h2 class="settings-h2">Profile</h2>
+          <form id="profile-form" class="form-stack">
+            <div>
+              <label class="field-label" for="display-name">Display name</label>
+              <input class="field" id="display-name" name="display_name" maxlength="80" autocomplete="nickname">
+            </div>
+            <div>
+              <p class="field-label">Email</p>
+              <p class="settings-email" id="email-value"></p>
+            </div>
+            <p id="profile-status" class="hint hidden" role="status"></p>
+            <p id="profile-error" class="field-error hidden" role="alert"></p>
+            <button class="btn" id="profile-save" type="submit">Save name</button>
+          </form>
+        </section>
+
+        <section class="settings-block" id="payout-block">
+          <h2 class="settings-h2">Payouts</h2>
+          <p class="note" id="payout-status">Checking Stripe payout account…</p>
+          <button class="btn" id="payout-btn" type="button" hidden>Manage payout account</button>
+          <p class="hint" id="payout-hint" hidden>
+            Stripe sends seller payments to this account. TradeSafe does not hold the money.
+          </p>
+        </section>
+
+        <section class="settings-block" id="session-block">
+          <h2 class="settings-h2">Session</h2>
+          <p class="note" id="session-note"></p>
+          <div class="settings-actions">
+            <a class="ghost" href="/dashboard.html">My trades</a>
+            <button class="ghost" id="sign-out" type="button">Sign out</button>
+          </div>
+        </section>
+
+        <section class="settings-block">
+          <h2 class="settings-h2">Policies</h2>
+          <p class="hint">
+            <a href="/legal.html">Legal</a>
+            ·
+            <a href="/legal.html#privacy">Privacy</a>
+            ·
+            <a href="/legal.html#transaction">Transaction &amp; dispute</a>
+          </p>
+        </section>
+      </div>
     </div>
   </main>
   <footer id="site-footer"></footer>
   <script type="module">
     import { mountChrome } from "/js/chrome.js";
-    mountChrome();
+    mountChrome({ active: "Settings" });
   </script>
   <script type="module" src="/js/settings.js"></script>
 </body>
