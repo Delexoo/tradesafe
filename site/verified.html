@@ -17,7 +17,10 @@
     </div>
   </main>
   <script type="module">
-    import { finishEmailHandoff } from "/js/email-handoff.js";
+    import {
+      finishEmailHandoff,
+      readEmailHandoffStored,
+    } from "/js/email-handoff.js";
     import { safeNextPath } from "/js/auth-email.js";
 
     const STORAGE_KEY = "ts-email-handoff";
@@ -27,31 +30,45 @@
     const status = document.getElementById("verified-status");
     const next = safeNextPath(location.search);
 
-    let askedHere = false;
-    try {
-      const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
-      askedHere = !!(stored && loginId && stored.id === loginId);
-    } catch {
-      askedHere = false;
-    }
+    const stored = readEmailHandoffStored();
+    const handoffId = loginId || stored?.id || null;
+    // Same browser that asked for the link — continue here even if complete fails.
+    const sameBrowser = !!(
+      stored &&
+      (!loginId || stored.id === loginId || stored.nextPath === next)
+    );
 
     try {
-      const result = await finishEmailHandoff(loginId);
-      if (result.ok && askedHere) {
-        location.replace(next);
-      } else if (result.ok) {
+      const result = await finishEmailHandoff(handoffId);
+      const session = result.session;
+
+      if (session?.user && sameBrowser) {
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* ignore */
+        }
+        location.replace(stored?.nextPath && stored.nextPath.startsWith("/") ? stored.nextPath : next);
+        return;
+      }
+
+      if (result.ok && session?.user) {
         title.textContent = "Check your other device";
         status.textContent =
           "That device is signing in now. You can close this page.";
-      } else if (result.signedInHere) {
+        return;
+      }
+
+      if (session?.user) {
         title.textContent = "You are signed in here";
         status.innerHTML =
           `Continue on this device: <a href="${next}">open TradeSafe</a>. The other device may still be waiting on an older link.`;
-      } else {
-        title.textContent = "Link did not work";
-        status.textContent =
-          "Go back to the device that asked for the email and request a new one. Open the newest email link.";
+        return;
       }
+
+      title.textContent = "Link did not work";
+      status.textContent =
+        "Go back to the device that asked for the email and request a new one. Open the newest email link.";
     } catch {
       title.textContent = "Link did not work";
       status.textContent =

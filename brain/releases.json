@@ -3,6 +3,24 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.28",
+      "date": "2026-10-22",
+      "title": "Create-trade email verify works on the same device",
+      "tag": "v0.1.28",
+      "sections": [
+        {
+          "heading": "Auth",
+          "added": [
+            "Create a trade shows Log in or Create an account from whether this browser already knows the email, and always sends a working signup-capable magic link."
+          ],
+          "fixes": [
+            "Opening the email link on the same device finishes the session and returns you to Create instead of stalling on verified.",
+            "Email-link tokens are read from the URL before the auth client can clear them, so verify no longer fails silently."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.27",
       "date": "2026-10-22",
       "title": "Sticky footer and signed-in create gate",

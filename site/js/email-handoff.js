@@ -151,19 +151,22 @@ export async function sendEmailLink({ email, shouldCreateUser, nextPath }) {
 
 /**
  * Login when this browser knows the email; otherwise sign up.
+ * Always allow create on the OTP call so existing and new accounts both get a link.
  * Falls back the other way if Supabase rejects the first attempt.
  */
 export async function sendEmailLinkAuto({ email, nextPath }) {
   const known = accountDetectedForEmail(email);
+  const mode = known ? "login" : "signup";
   try {
+    // shouldCreateUser:true works for both new and returning users.
     const result = await sendEmailLink({
       email,
-      shouldCreateUser: !known,
+      shouldCreateUser: true,
       nextPath,
     });
-    return { ...result, mode: known ? "login" : "signup" };
+    return { ...result, mode };
   } catch (err) {
-    if (known && noAccountError(err)) {
+    if (noAccountError(err)) {
       const result = await sendEmailLink({
         email,
         shouldCreateUser: true,
@@ -171,22 +174,13 @@ export async function sendEmailLinkAuto({ email, nextPath }) {
       });
       return { ...result, mode: "signup" };
     }
-    if (!known && /already|registered|exists/i.test(String(err?.message || ""))) {
+    if (/already|registered|exists|signups not allowed/i.test(String(err?.message || ""))) {
       const result = await sendEmailLink({
         email,
         shouldCreateUser: false,
         nextPath,
       });
       return { ...result, mode: "login" };
-    }
-    // Unknown email + login-only rejection → create account
-    if (!known && noAccountError(err)) {
-      const result = await sendEmailLink({
-        email,
-        shouldCreateUser: true,
-        nextPath,
-      });
-      return { ...result, mode: "signup" };
     }
     throw err;
   }
@@ -200,13 +194,41 @@ export function resumeEmailHandoff(nextPath) {
   return watch(stored);
 }
 
+export function readEmailHandoffStored() {
+  return readStored();
+}
+
 function clearAuthParamsFromUrl() {
   const url = new URL(location.href);
   url.hash = "";
-  for (const key of ["code", "token_hash", "type", "error", "error_description", "error_code"]) {
+  for (const key of [
+    "code",
+    "token_hash",
+    "type",
+    "error",
+    "error_description",
+    "error_code",
+    "access_token",
+    "refresh_token",
+  ]) {
     url.searchParams.delete(key);
   }
   history.replaceState(null, "", `${url.pathname}${url.search}`);
+}
+
+/** Snapshot hash + query before the Supabase client can strip the URL. */
+function captureAuthCallback() {
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
+  const query = new URLSearchParams(location.search);
+  return {
+    access_token: hash.get("access_token") || query.get("access_token"),
+    refresh_token: hash.get("refresh_token") || query.get("refresh_token"),
+    token_hash: query.get("token_hash") || hash.get("token_hash"),
+    type: query.get("type") || hash.get("type") || "email",
+    code: query.get("code") || hash.get("code"),
+    error: query.get("error") || hash.get("error"),
+    error_description: query.get("error_description") || hash.get("error_description"),
+  };
 }
 
 /**
@@ -214,55 +236,55 @@ function clearAuthParamsFromUrl() {
  * Supports implicit hash tokens (cross-device) and same-tab PKCE/code fallbacks.
  */
 async function adoptSession() {
+  // Must run before await getSupabase() — detectSessionInUrl clears the hash.
+  const callback = captureAuthCallback();
+  if (callback.error) {
+    console.warn("Auth callback error", callback.error, callback.error_description);
+    return null;
+  }
+
   const sb = await getSupabase();
-  let codeTried = false;
 
-  for (let i = 0; i < 20; i++) {
-    const { data: existing } = await sb.auth.getSession();
-    if (existing.session?.access_token && existing.session.refresh_token) {
+  if (callback.access_token && callback.refresh_token) {
+    const { data, error } = await sb.auth.setSession({
+      access_token: callback.access_token,
+      refresh_token: callback.refresh_token,
+    });
+    if (!error && data.session) {
       clearAuthParamsFromUrl();
-      return existing.session;
+      return data.session;
     }
+  }
 
-    const hash = new URLSearchParams(location.hash.replace(/^#/, ""));
-    const accessToken = hash.get("access_token");
-    const refreshToken = hash.get("refresh_token");
-    if (accessToken && refreshToken) {
-      const { data, error } = await sb.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
+  if (callback.token_hash) {
+    const types = [...new Set([callback.type, "email", "magiclink", "signup", "invite"])];
+    for (const type of types) {
+      const result = await sb.auth.verifyOtp({
+        token_hash: callback.token_hash,
+        type,
       });
-      if (!error && data.session) {
-        clearAuthParamsFromUrl();
-        return data.session;
-      }
-    }
-
-    const params = new URLSearchParams(location.search);
-    const tokenHash = params.get("token_hash");
-    if (tokenHash) {
-      const type = params.get("type") || "email";
-      let result = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
-      if (result.error && type !== "magiclink") {
-        result = await sb.auth.verifyOtp({ token_hash: tokenHash, type: "magiclink" });
-      }
       if (!result.error && result.data.session) {
         clearAuthParamsFromUrl();
         return result.data.session;
       }
     }
+  }
 
-    const code = params.get("code");
-    if (code && !codeTried) {
-      codeTried = true;
-      const { data, error } = await sb.auth.exchangeCodeForSession(code);
-      if (!error && data.session) {
-        clearAuthParamsFromUrl();
-        return data.session;
-      }
+  if (callback.code) {
+    const { data, error } = await sb.auth.exchangeCodeForSession(callback.code);
+    if (!error && data.session) {
+      clearAuthParamsFromUrl();
+      return data.session;
     }
+  }
 
-    await new Promise((r) => setTimeout(r, 100));
+  for (let i = 0; i < 25; i++) {
+    const { data: existing } = await sb.auth.getSession();
+    if (existing.session?.access_token && existing.session.refresh_token) {
+      clearAuthParamsFromUrl();
+      return existing.session;
+    }
+    await new Promise((r) => setTimeout(r, 80));
   }
 
   const { data } = await sb.auth.getSession();
@@ -285,13 +307,22 @@ async function postComplete(loginId, session) {
 /** The browser that opened the email link gives the session back to the requester. */
 export async function finishEmailHandoff(loginId) {
   const session = await adoptSession();
-  if (!session?.access_token || !session.refresh_token) return { ok: false };
-  if (!loginId) return { ok: true };
+  if (!session?.access_token || !session.refresh_token) {
+    return { ok: false, session: null };
+  }
+  if (session.user?.email) rememberEmailAccount(session.user.email);
+
+  if (!loginId) {
+    return { ok: true, session, signedInHere: true };
+  }
+
   let res = await postComplete(loginId, session);
   if (res.status === 429) {
     await new Promise((r) => setTimeout(r, 1200));
     res = await postComplete(loginId, session);
   }
-  if (!res.ok) return { ok: false, signedInHere: true };
-  return { ok: true };
+  if (!res.ok) {
+    return { ok: false, signedInHere: true, session };
+  }
+  return { ok: true, session };
 }

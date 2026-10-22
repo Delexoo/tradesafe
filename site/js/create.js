@@ -417,12 +417,14 @@ function paintAccountGate(email = "") {
   const known = accountDetectedForEmail(email);
   const title = document.getElementById("account-title");
   const note = document.getElementById("account-note");
+  const submit = document.getElementById("account-submit");
   if (title) title.textContent = known ? "Log in" : "Create an account";
   if (note) {
     note.textContent = known
       ? "Welcome back. Email a link to continue creating this trade."
-      : "You need an account so Stripe can pay you when the trade is done.";
+      : "No account on this device yet — we will create one when you open the email link.";
   }
+  if (submit) submit.textContent = known ? "Email me a login link" : "Email me a signup link";
 }
 
 function showAccountGate() {
