@@ -3,7 +3,6 @@ import { authPanelHtml, bindEmailAuth } from "./email-auth.js";
 import { getSession } from "./supabase.js";
 
 const MENU_LINKS = [
-  { href: "/", label: "Home" },
   { href: "/create.html", label: "Create a trade" },
   { href: "/dashboard.html", label: "My trades" },
   { href: "/#how", label: "How it works" },
@@ -11,16 +10,21 @@ const MENU_LINKS = [
   { href: "/legal.html", label: "Legal" },
 ];
 
+const HOME_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5.5v-6h-3v6H5a1 1 0 0 1-1-1z"/></svg>`;
+
 export function mountChrome({ active } = {}) {
   const header = document.getElementById("site-header");
   if (header) {
     const params = new URLSearchParams(location.search);
     const startMode = params.get("mode") === "signup" ? "signup" : "login";
     header.innerHTML = `
-      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
-        <span class="menu-label">Menu</span>
-        <span class="menu-bars" aria-hidden="true"></span>
-      </button>
+      <div class="nav-pair" role="group" aria-label="Home and menu">
+        <a class="home-btn" href="/" aria-label="Home">${HOME_ICON}</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
+          <span class="menu-label">Menu</span>
+          <span class="menu-bars" aria-hidden="true"></span>
+        </button>
+      </div>
       <button class="login-toggle" type="button" aria-expanded="false" aria-controls="auth-panel">Log in</button>
       <nav class="menu-screen" id="site-menu" aria-label="Pages">
         ${MENU_LINKS.map((l) => `<a href="${l.href}">${l.label}</a>`).join("")}

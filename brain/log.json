@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.22",
+      "date": "2026-10-22",
+      "title": "Conjoined home and menu control",
+      "sections": [
+        {
+          "heading": "Design",
+          "added": [
+            "The header uses a conjoined home icon and Menu control; Home is no longer listed in the full-screen menu."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.21",
       "date": "2026-10-22",
       "title": "Auth scripts load under CSP",

@@ -60,6 +60,19 @@ header {
   pointer-events: none;
 }
 
+.nav-pair {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: stretch;
+  height: 2.85rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(28 27 25 / 10%);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
 .home-btn,
 .menu-toggle,
 .login-toggle {
@@ -83,14 +96,26 @@ header {
   pointer-events: auto;
 }
 
+.nav-pair .home-btn,
+.nav-pair .menu-toggle {
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+  height: 100%;
+}
+
 .home-btn {
   width: 2.85rem;
   padding: 0;
 }
 
+.nav-pair .home-btn {
+  border-right: 1px solid var(--line);
+}
+
 .home-btn svg {
-  width: 1.2rem;
-  height: 1.2rem;
+  width: 1.15rem;
+  height: 1.15rem;
   display: block;
   fill: none;
   stroke: currentColor;
@@ -102,6 +127,16 @@ header {
 .menu-toggle,
 .login-toggle {
   padding: 0 0.95rem 0 1.05rem;
+}
+
+.nav-pair .home-btn:hover,
+.nav-pair .menu-toggle:hover {
+  background: rgb(28 27 25 / 4%);
+}
+
+.nav-pair .home-btn:active,
+.nav-pair .menu-toggle:active {
+  background: rgb(28 27 25 / 7%);
 }
 
 header.is-open .login-toggle {
