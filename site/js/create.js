@@ -3,7 +3,7 @@ import { problemsForStep } from "./create-form.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
 import { getSession } from "./supabase.js";
 import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
-import { emailProblem } from "./email-auth-check.js";
+import { emailProblem } from "./auth-email.js";
 
 const STEP_TITLES = ["Name the trade", "Describe it", "Choose your side", "Agree and create"];
 const form = document.getElementById("create-form");

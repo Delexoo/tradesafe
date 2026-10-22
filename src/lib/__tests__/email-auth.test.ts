@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emailProblem } from "../../../site/js/email-auth-check.js";
+import { emailProblem } from "../../../lib/email-auth-check.mjs";
 
 describe("email login", () => {
   it("asks for an email", () => {

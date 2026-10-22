@@ -1,5 +1,5 @@
 import { getSession, getSupabase } from "./supabase.js";
-import { emailProblem, safeNextPath } from "./email-auth-check.js";
+import { emailProblem, safeNextPath } from "./auth-email.js";
 import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
 
 export { emailProblem, safeNextPath };
