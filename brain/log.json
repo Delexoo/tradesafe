@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.9",
+      "date": "2026-10-22",
+      "title": "Publish the live Vercel site with each update",
+      "sections": [
+        {
+          "heading": "Design",
+          "fixes": [
+            "The live site at tradesafe-alpha.vercel.app is deployed with each update, and pages are not cached for an hour after a release."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.8",
       "date": "2026-10-22",
       "title": "Create wizard and email sign-in",

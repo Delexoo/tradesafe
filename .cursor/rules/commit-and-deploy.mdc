@@ -1,5 +1,5 @@
 ---
-description: On every commit, update, or deploy request, bump TradeSafe version, update the brain log, commit, and redeploy the web app
+description: On every commit, update, or deploy request, bump TradeSafe version, update the brain log, commit, push, publish the GitHub Release, and redeploy Vercel production
 alwaysApply: true
 ---
 
@@ -18,9 +18,11 @@ The version is one number. If the user did not name the next one, raise the patc
 2. Smoke-check the vanilla site (`npm run dev` / open key HTML pages) when UI changed. Run `npm test` when `src/lib` changed.
 3. Commit source, `site/`, `server.mjs`, brain log, and `brain/releases.json` together. Never commit `.env` or secrets. Prefer `C:\Users\TeamB\MasterVault\middleman` if `D:\` has filesystem errors — keep trees synced.
 4. Commit message from the new version title + `added`/`fixes` (concise, why-focused). Follow git safety rules.
-5. Push only when the user asked to push, update, or deploy.
+5. Push when the user asked to push, update, or deploy.
 6. After every successful **push** to GitHub, publish the matching GitHub Release so notes appear under the repo **Releases** tab: run `npm run notes` then `npm run release:github` (uses `GITHUB_TOKEN` / `GH_TOKEN` from `.env`; never print the token). Set `GITHUB_RELEASE_TARGET` to the pushed commit SHA when useful. Do not skip this step when a token is available — the Releases page must show this version. If `.github/workflows/github-release.yml` exists and the token has `workflow` scope, include it in the commit for CI backup; otherwise keep publishing via `npm run release:github` (required).
-7. On **deploy**: publish the site (Vercel static `site/` and/or Node `server.mjs`) with tokens from `.env` without printing them.
-8. Report the version, commit summary, GitHub Release URL (or confirm the workflow/release step), and how to open the site (`npm run dev` → http://localhost:3000).
+7. On **update**, **push**, or **deploy**, publish every connected service from that same commit. A GitHub push does not update the live site by itself — the Vercel project is not wired to auto-deploy from GitHub.
+   - **Vercel production** (required): from the repo root, run `npx vercel --prod --yes` with `VERCEL_TOKEN` from `.env` (never print it). Set `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` when the folder has no `.vercel` link. Production aliases are `https://tradesafe-alpha.vercel.app` and `https://tradesafe-trymoonrises-projects.vercel.app`. Wait until the deployment is Ready, then open one changed page on `https://tradesafe-alpha.vercel.app` and confirm it matches this commit. Do not say the update is done while that URL is still serving an older commit.
+   - **GitHub Release** (required): step 6.
+8. Report the version, commit summary, GitHub Release URL, the Vercel production URL, and how to open the site locally (`npm run dev` → http://localhost:3000).
 
-If the user only asked to commit, do steps 1–4. If they also asked to update/push/deploy, include push + GitHub Release. If they only asked to update the brain log, do not bump or commit.
+If the user only asked to commit, do steps 1–4. If they also asked to update, push, or deploy, do the push, the GitHub Release, and the Vercel production deploy. If they only asked to update the brain log, do not bump or commit.
