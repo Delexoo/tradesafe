@@ -1,0 +1,10 @@
+# Built by scripts/prepare-vercel.mjs during `vercel build`.
+# Uploading a local copy makes Vercel keep a stale file list and drop new site/ files.
+public
+.vercel
+.env
+.env.*
+node_modules
+.next
+out
+coverage

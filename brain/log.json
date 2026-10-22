@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.16",
+      "date": "2026-10-22",
+      "title": "Live email sign-in scripts ship with each deploy",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Vercel deploys no longer reuse a stale local public folder that could omit new site scripts."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.15",
       "date": "2026-10-22",
       "title": "Email me a link works on the live site again",
