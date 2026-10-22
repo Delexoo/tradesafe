@@ -3,6 +3,21 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.31",
+      "date": "2026-10-22",
+      "title": "Create account gate works again",
+      "tag": "v0.1.31",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Create a trade loads again after renaming the fee helper so Vercel no longer 404s the script that blocked Sign up and Log in.",
+            "The create account card has more padding and the Sign up / Log in control no longer double-paints the active tab."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.30",
       "date": "2026-10-22",
       "title": "Create trade Sign up / Log in toggle",

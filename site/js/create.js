@@ -1,6 +1,6 @@
 import { api } from "./api-client.js";
 import { deliveryForCategory, problemsForStep } from "./create-form.js";
-import { platformFeeCents, sellerNetCents } from "./fees.js";
+import { platformFeeCents, sellerNetCents } from "./platform-fees.js";
 import { money } from "./format.js";
 import { enhanceSelects } from "./listbox.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
@@ -420,7 +420,7 @@ function setAccountMode(mode, { paint = true } = {}) {
   accountMode = mode === "login" ? "login" : "signup";
   const group = document.getElementById("account-mode");
   if (group) group.dataset.mode = accountMode;
-  for (const btn of group?.querySelectorAll("[data-mode]") || []) {
+  for (const btn of group?.querySelectorAll("button[data-mode]") || []) {
     const on = btn.getAttribute("data-mode") === accountMode;
     btn.classList.toggle("on", on);
     btn.setAttribute("aria-selected", on ? "true" : "false");
@@ -482,8 +482,9 @@ const accountStatus = document.getElementById("account-status");
 const accountModeGroup = document.getElementById("account-mode");
 
 accountModeGroup?.addEventListener("click", (event) => {
-  const btn = event.target.closest("[data-mode]");
+  const btn = event.target.closest("button[data-mode]");
   if (!btn || !accountModeGroup.contains(btn)) return;
+  event.preventDefault();
   accountError?.classList.add("hidden");
   accountStatus?.classList.add("hidden");
   setAccountMode(btn.getAttribute("data-mode"));

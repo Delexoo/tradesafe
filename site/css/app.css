@@ -452,9 +452,24 @@ body[data-page="signup"] > footer {
 body[data-page="create"] .footer-product { justify-items: center; }
 body[data-page="create"] .footer-links { justify-items: center; }
 .create-card {
-  padding: 1.25rem 1.35rem 1.15rem;
+  padding: 1.5rem 1.5rem 1.6rem;
 }
 .create-card h1 { text-align: center; }
+#account-gate.create-card {
+  padding: 1.6rem 1.5rem 1.75rem;
+}
+#account-gate .note {
+  text-align: center;
+  max-width: 22rem;
+  margin-inline: auto;
+}
+#account-gate .form-stack {
+  margin-top: 1.15rem;
+  gap: 16px;
+}
+#account-gate .act-btn {
+  margin-top: 4px;
+}
 .text-link {
   border: 0;
   padding: 0;
@@ -559,7 +574,8 @@ body[data-page="create"] .wizard-steps span.done i {
 }
 .create-success .invite-row .field { flex: 1 1 14rem; min-width: 0; text-align: left; }
 @media (max-width: 640px) {
-  .create-card { padding: 1.25rem 1rem 1.1rem; }
+  .create-card { padding: 1.4rem 1.15rem 1.5rem; }
+  #account-gate.create-card { padding: 1.45rem 1.15rem 1.6rem; }
   body[data-page="create"] .wizard-steps span { font-size: 11px; }
 }
 
@@ -713,7 +729,7 @@ form .choice button {
   transform: translateX(100%);
 }
 .auth-mode-segment {
-  margin-bottom: 2px;
+  margin: 0;
 }
 .choice-segment button {
   position: relative;
@@ -724,11 +740,27 @@ form .choice button {
   background: transparent;
   color: var(--app-muted);
   cursor: pointer;
+  font: inherit;
+  font-weight: 650;
 }
 .choice-segment button.on {
   color: var(--primary-ink);
   background: transparent;
   border-color: transparent;
+  box-shadow: none;
+}
+/* Segment thumbs own the fill — never let .choice button styles double-paint. */
+.choice-segment.choice button,
+.choice-segment.choice button.on {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.choice-segment.choice button {
+  color: var(--app-muted);
+}
+.choice-segment.choice button.on {
+  color: var(--primary-ink);
 }
 .choice button {
   min-height: 48px;
@@ -742,9 +774,6 @@ form .choice button {
   background: var(--primary);
   color: var(--primary-ink);
   border-color: transparent;
-}
-.choice-segment button.on {
-  background: transparent;
 }
 @media (prefers-reduced-motion: reduce) {
   button.btn,
