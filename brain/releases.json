@@ -3,6 +3,20 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.33",
+      "date": "2026-10-22",
+      "title": "Create sign-up works without missing script",
+      "tag": "v0.1.33",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Create a trade no longer depends on a separate fee script that was missing from production, so Sign up and Log in run again."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.32",
       "date": "2026-10-22",
       "title": "Create loads after seller-net path fix",
