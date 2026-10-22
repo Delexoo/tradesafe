@@ -15,8 +15,8 @@
   <header id="site-header"></header>
   <main id="content">
     <div class="panel create-card" id="account-gate">
-      <h1>Create an account</h1>
-      <p class="note">You need an account so Stripe can pay you when the trade is done.</p>
+      <h1 id="account-title">Create an account</h1>
+      <p class="note" id="account-note">You need an account so Stripe can pay you when the trade is done.</p>
       <form id="account-form" class="form-stack">
         <div>
           <label class="field-label" for="account-email">Email</label>
@@ -26,7 +26,6 @@
         <p id="account-status" class="hint hidden" role="status"></p>
         <button class="btn act-btn" id="account-submit" type="submit">Email me a link</button>
       </form>
-      <p class="hint"><button type="button" class="text-link" id="account-switch">I already have an account</button></p>
     </div>
     <div class="panel create-card hidden" id="wizard">
       <p class="wizard-count" id="step-label">1 of 4</p>

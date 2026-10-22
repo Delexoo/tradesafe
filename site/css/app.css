@@ -47,9 +47,6 @@ body[data-page="settings"] main#content {
   margin-inline: auto;
   padding: 5.2rem 0 2rem;
 }
-.settings-tabs {
-  margin-top: 1.1rem;
-}
 .settings-panel .settings-block {
   margin-top: 1.75rem;
   padding-top: 1.35rem;

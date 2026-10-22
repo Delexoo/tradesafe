@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.26",
+      "date": "2026-10-22",
+      "title": "Auto log in or sign up from known email",
+      "sections": [
+        {
+          "heading": "Auth",
+          "added": [
+            "Create, Settings, and the header auth panel pick Log in or Create an account from whether this browser already knows the email — no manual switch."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.25",
       "date": "2026-10-22",
       "title": "Hero room animation and full Settings with login",

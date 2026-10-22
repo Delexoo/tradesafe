@@ -1,6 +1,11 @@
 import { api } from "./api-client.js";
 import { emailProblem } from "./auth-email.js";
-import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
+import {
+  accountDetectedForEmail,
+  rememberEmailAccount,
+  resumeEmailHandoff,
+  sendEmailLinkAuto,
+} from "./email-handoff.js";
 import { getSession, getSupabase } from "./supabase.js";
 
 const authGate = document.getElementById("auth-gate");
@@ -12,8 +17,6 @@ const authEmail = document.getElementById("auth-email");
 const authError = document.getElementById("auth-error");
 const authStatus = document.getElementById("auth-status");
 const authSubmit = document.getElementById("auth-submit");
-const tabs = [...document.querySelectorAll("[data-auth-mode]")];
-
 const lede = document.getElementById("settings-lede");
 const nameInput = document.getElementById("display-name");
 const emailValue = document.getElementById("email-value");
@@ -25,8 +28,6 @@ const payoutBtn = document.getElementById("payout-btn");
 const payoutHint = document.getElementById("payout-hint");
 const sessionNote = document.getElementById("session-note");
 const signOutBtn = document.getElementById("sign-out");
-
-let authMode = "login";
 
 function show(el, on = true) {
   if (!el) return;
@@ -43,23 +44,21 @@ function flash(el, message) {
   el.classList.toggle("hidden", !message);
 }
 
-function paintAuthMode() {
-  for (const tab of tabs) {
-    tab.setAttribute("aria-selected", String(tab.dataset.authMode === authMode));
-  }
-  setText(authTitle, authMode === "signup" ? "Create an account" : "Log in");
+function paintAuthMode(email = "") {
+  const known = accountDetectedForEmail(email);
+  setText(authTitle, known ? "Log in" : "Create an account");
   setText(
     authLede,
-    authMode === "signup"
-      ? "We email you a link. No password. Then you can manage settings and payouts."
-      : "Email only. No password. Settings unlock after you verify your email.",
+    known
+      ? "Welcome back. Email a link to open your settings."
+      : "We email you a link. No password. Settings unlock after you verify your email.",
   );
 }
 
 function showAuthGate() {
   show(authGate, true);
   show(accountSettings, false);
-  paintAuthMode();
+  paintAuthMode(authEmail?.value || "");
 }
 
 function showAccountSettings() {
@@ -88,6 +87,7 @@ async function loadPayout() {
 
 async function loadAccount() {
   const { profile, email } = await api("/api/profile");
+  if (email) rememberEmailAccount(email);
   nameInput.value = profile?.display_name || "";
   setText(emailValue, email || "—");
   setText(lede, "Manage your TradeSafe account.");
@@ -95,15 +95,10 @@ async function loadAccount() {
   await loadPayout();
 }
 
-for (const tab of tabs) {
-  tab.addEventListener("click", () => {
-    authMode = tab.dataset.authMode === "signup" ? "signup" : "login";
-    paintAuthMode();
-    flash(authError, "");
-    flash(authStatus, "");
-    authEmail?.focus();
-  });
-}
+authEmail?.addEventListener("input", () => {
+  flash(authError, "");
+  paintAuthMode(authEmail.value);
+});
 
 authForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -116,11 +111,11 @@ authForm?.addEventListener("submit", async (event) => {
     authEmail.focus();
     return;
   }
+  paintAuthMode(email);
   authSubmit.disabled = true;
   try {
-    const { whenSignedIn } = await sendEmailLink({
+    const { whenSignedIn } = await sendEmailLinkAuto({
       email,
-      shouldCreateUser: authMode === "signup",
       nextPath: "/settings.html",
     });
     flash(authStatus, "Check your email. This page opens settings when you open the link.");
@@ -128,6 +123,7 @@ authForm?.addEventListener("submit", async (event) => {
     const session = await whenSignedIn;
     if (session?.replaced) return;
     if (session?.user) {
+      rememberEmailAccount(session.user.email || email);
       showAccountSettings();
       await loadAccount();
       return;
@@ -136,12 +132,7 @@ authForm?.addEventListener("submit", async (event) => {
     flash(authError, "That email link expired. Request a new one.");
   } catch (err) {
     flash(authStatus, "");
-    const text = err?.message || "Could not send the email.";
-    if (authMode === "login" && /signups not allowed|user not found|not found/i.test(text)) {
-      flash(authError, "No account for that email yet. Use Sign up.");
-    } else {
-      flash(authError, text);
-    }
+    flash(authError, err?.message || "Could not send the email.");
   } finally {
     authSubmit.disabled = false;
   }

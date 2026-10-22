@@ -5,7 +5,12 @@ import { money } from "./format.js";
 import { enhanceSelects } from "./listbox.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
 import { getSession, getSupabase } from "./supabase.js";
-import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
+import {
+  accountDetectedForEmail,
+  rememberEmailAccount,
+  resumeEmailHandoff,
+  sendEmailLinkAuto,
+} from "./email-handoff.js";
 import { emailProblem } from "./auth-email.js";
 
 const STEP_TITLES = ["Name the trade", "Describe it", "Choose your side", "Agree and create"];
@@ -19,7 +24,6 @@ const panes = [...document.querySelectorAll("[data-pane]")];
 const DRAFT_KEY = "ts-create-draft";
 let step = 0;
 let payoutReady = false;
-let accountMode = "signup";
 
 document.getElementById("policy-box").innerHTML = policyCheckboxHtml({ wizard: true });
 const policyGate = wirePolicyGate(
@@ -399,6 +403,7 @@ function openWizard(session) {
   gate.setAttribute("hidden", "");
   wizard.classList.remove("hidden");
   wizard.removeAttribute("hidden");
+  if (session?.user?.email) rememberEmailAccount(session.user.email);
   const name = document.getElementById("display-name");
   if (!name.value) {
     name.value = session.user.user_metadata?.display_name || session.user.email?.split("@")[0] || "";
@@ -408,13 +413,25 @@ function openWizard(session) {
   showStep();
 }
 
+function paintAccountGate(email = "") {
+  const known = accountDetectedForEmail(email);
+  const title = document.getElementById("account-title");
+  const note = document.getElementById("account-note");
+  if (title) title.textContent = known ? "Log in" : "Create an account";
+  if (note) {
+    note.textContent = known
+      ? "Welcome back. Email a link to continue creating this trade."
+      : "You need an account so Stripe can pay you when the trade is done.";
+  }
+}
+
 function showAccountGate() {
   const gate = document.getElementById("account-gate");
   gate.classList.remove("hidden");
   gate.removeAttribute("hidden");
   document.getElementById("account-checking")?.remove();
   accountForm?.classList.remove("hidden");
-  document.getElementById("account-switch")?.closest("p")?.classList.remove("hidden");
+  paintAccountGate(accountEmail?.value || "");
 }
 
 function showCheckingGate() {
@@ -428,21 +445,15 @@ function showCheckingGate() {
     gate.insertBefore(checking, accountForm);
   }
   accountForm?.classList.add("hidden");
-  document.getElementById("account-switch")?.closest("p")?.classList.add("hidden");
 }
 
 const accountForm = document.getElementById("account-form");
 const accountEmail = document.getElementById("account-email");
 const accountError = document.getElementById("account-error");
 const accountStatus = document.getElementById("account-status");
-document.getElementById("account-switch").addEventListener("click", () => {
-  accountMode = accountMode === "signup" ? "login" : "signup";
-  document.getElementById("account-switch").textContent =
-    accountMode === "signup" ? "I already have an account" : "I need to create an account";
-  document.querySelector("#account-gate h1").textContent =
-    accountMode === "signup" ? "Create an account" : "Log in";
+accountEmail?.addEventListener("input", () => {
   accountError.classList.add("hidden");
-  accountStatus.classList.add("hidden");
+  paintAccountGate(accountEmail.value);
 });
 accountForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -456,12 +467,12 @@ accountForm.addEventListener("submit", async (event) => {
     accountEmail.focus();
     return;
   }
+  paintAccountGate(email);
   const button = document.getElementById("account-submit");
   button.disabled = true;
   try {
-    const { whenSignedIn } = await sendEmailLink({
+    const { whenSignedIn } = await sendEmailLinkAuto({
       email,
-      shouldCreateUser: accountMode === "signup",
       nextPath: "/create.html",
     });
     accountStatus.textContent = "Check your email. This page signs you in when you open the link.";

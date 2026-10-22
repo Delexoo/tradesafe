@@ -1,19 +1,19 @@
 import { getSession, getSupabase } from "./supabase.js";
 import { emailProblem, safeNextPath } from "./auth-email.js";
-import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
+import {
+  accountDetectedForEmail,
+  rememberEmailAccount,
+  resumeEmailHandoff,
+  sendEmailLinkAuto,
+} from "./email-handoff.js";
 
 export { emailProblem, safeNextPath };
 
-export function authPanelHtml(mode = "login") {
-  const loginOn = mode !== "signup";
+export function authPanelHtml(_mode = "login") {
   return `
     <div class="auth-card" role="dialog" aria-modal="true" aria-label="Log in or sign up">
-      <h2 class="auth-title">Log in or sign up</h2>
-      <p class="auth-lede">Email only. No password.</p>
-      <div class="auth-tabs" role="tablist" aria-label="Account">
-        <button type="button" class="auth-tab" role="tab" data-auth-mode="login" aria-selected="${loginOn}">Log in</button>
-        <button type="button" class="auth-tab" role="tab" data-auth-mode="signup" aria-selected="${!loginOn}">Sign up</button>
-      </div>
+      <h2 class="auth-title">Create an account</h2>
+      <p class="auth-lede">Email only. No password. We pick log in or sign up from your email.</p>
       <form class="auth-form">
         <label class="auth-label">
           Email
@@ -36,13 +36,12 @@ export function authPanelHtml(mode = "login") {
 
 export function bindEmailAuth(root, { initialMode = "login" } = {}) {
   if (!root) return;
-  let mode = initialMode === "signup" ? "signup" : "login";
+  void initialMode;
   const form = root.querySelector(".auth-form");
   const account = root.querySelector(".auth-account");
   const emailInput = root.querySelector(".auth-email");
   const errorEl = root.querySelector(".auth-error");
   const statusEl = root.querySelector(".auth-status");
-  const tabs = [...root.querySelectorAll(".auth-tab")];
 
   const showError = (message) => {
     errorEl.textContent = message || "";
@@ -54,23 +53,18 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
   };
 
   const paintMode = () => {
-    for (const tab of tabs) {
-      tab.setAttribute("aria-selected", String(tab.dataset.authMode === mode));
+    const known = accountDetectedForEmail(emailInput?.value || "");
+    const title = root.querySelector(".auth-title");
+    if (title && account.hidden) {
+      title.textContent = known ? "Log in" : "Create an account";
     }
   };
   paintMode();
 
-  for (const tab of tabs) {
-    tab.addEventListener("click", () => {
-      mode = tab.dataset.authMode === "signup" ? "signup" : "login";
-      paintMode();
-      showError("");
-      showStatus("");
-      emailInput?.focus();
-    });
-  }
-
-  emailInput?.addEventListener("input", () => showError(""));
+  emailInput?.addEventListener("input", () => {
+    showError("");
+    paintMode();
+  });
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -82,21 +76,19 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
       emailInput.focus();
       return;
     }
+    paintMode();
     const button = form.querySelector(".auth-submit");
     button.disabled = true;
     const nextPath = safeNextPath(location.search);
     try {
       showError("");
-      const { whenSignedIn } = await sendEmailLink({
-        email,
-        shouldCreateUser: mode === "signup",
-        nextPath,
-      });
+      const { whenSignedIn } = await sendEmailLinkAuto({ email, nextPath });
       showStatus("Check your email. This page signs you in when you open the link.");
       button.disabled = false;
       const session = await whenSignedIn;
       if (session?.replaced) return;
       if (session?.user) {
+        rememberEmailAccount(session.user.email || email);
         location.href = nextPath;
         return;
       }
@@ -104,12 +96,7 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
       showError("That email link expired. Request a new one.");
     } catch (err) {
       showStatus("");
-      const text = err?.message || "Could not send the email.";
-      if (mode === "login" && /signups not allowed|user not found|not found/i.test(text)) {
-        showError("No account for that email yet. Use Sign up.");
-      } else {
-        showError(text);
-      }
+      showError(err?.message || "Could not send the email.");
     } finally {
       button.disabled = false;
     }
@@ -129,8 +116,8 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
     .then((session) => {
       const email = session?.user?.email;
       if (!email) return;
+      rememberEmailAccount(email);
       form.hidden = true;
-      root.querySelector(".auth-tabs").hidden = true;
       const lede = root.querySelector(".auth-card > .auth-lede");
       if (lede) lede.hidden = true;
       account.hidden = false;

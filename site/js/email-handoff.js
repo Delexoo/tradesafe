@@ -92,6 +92,37 @@ function watch(stored) {
   return watching;
 }
 
+const KNOWN_EMAILS_KEY = "ts-known-emails";
+
+export function rememberEmailAccount(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized) return;
+  try {
+    const list = JSON.parse(localStorage.getItem(KNOWN_EMAILS_KEY) || "[]");
+    const next = [normalized, ...list.filter((e) => e !== normalized)].slice(0, 20);
+    localStorage.setItem(KNOWN_EMAILS_KEY, JSON.stringify(next));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+/** True when this browser has successfully signed in with that email before. */
+export function accountDetectedForEmail(email) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized) return false;
+  try {
+    const list = JSON.parse(localStorage.getItem(KNOWN_EMAILS_KEY) || "[]");
+    return Array.isArray(list) && list.includes(normalized);
+  } catch {
+    return false;
+  }
+}
+
+function noAccountError(error) {
+  const text = String(error?.message || error || "");
+  return /signups not allowed|user not found|not found|unable to validate/i.test(text);
+}
+
 /** Ask for the email link and keep this browser signed in once it is opened. */
 export async function sendEmailLink({ email, shouldCreateUser, nextPath }) {
   const id = randomId();
@@ -116,6 +147,49 @@ export async function sendEmailLink({ email, shouldCreateUser, nextPath }) {
   });
   if (error) throw error;
   return { whenSignedIn: watch(stored) };
+}
+
+/**
+ * Login when this browser knows the email; otherwise sign up.
+ * Falls back the other way if Supabase rejects the first attempt.
+ */
+export async function sendEmailLinkAuto({ email, nextPath }) {
+  const known = accountDetectedForEmail(email);
+  try {
+    const result = await sendEmailLink({
+      email,
+      shouldCreateUser: !known,
+      nextPath,
+    });
+    return { ...result, mode: known ? "login" : "signup" };
+  } catch (err) {
+    if (known && noAccountError(err)) {
+      const result = await sendEmailLink({
+        email,
+        shouldCreateUser: true,
+        nextPath,
+      });
+      return { ...result, mode: "signup" };
+    }
+    if (!known && /already|registered|exists/i.test(String(err?.message || ""))) {
+      const result = await sendEmailLink({
+        email,
+        shouldCreateUser: false,
+        nextPath,
+      });
+      return { ...result, mode: "login" };
+    }
+    // Unknown email + login-only rejection → create account
+    if (!known && noAccountError(err)) {
+      const result = await sendEmailLink({
+        email,
+        shouldCreateUser: true,
+        nextPath,
+      });
+      return { ...result, mode: "signup" };
+    }
+    throw err;
+  }
 }
 
 /** Continue a sign-in that this tab already requested. */
