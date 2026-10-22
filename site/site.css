@@ -237,6 +237,16 @@ header.is-open .login-toggle {
 .auth-error { margin: 0; color: #b42318; font-size: 0.9rem; font-weight: 650; }
 .auth-status { margin: 0; color: #1d4ed8; font-size: 0.92rem; }
 .auth-account { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.auth-settings {
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
+}
+.auth-sign-out {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
 
 .menu-label { line-height: 1; }
 

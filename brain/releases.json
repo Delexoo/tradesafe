@@ -3,6 +3,26 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.24",
+      "date": "2026-10-22",
+      "title": "Account panel Settings and Home in menu",
+      "tag": "v0.1.24",
+      "sections": [
+        {
+          "heading": "Auth",
+          "added": [
+            "The Account panel links to Settings and hides the email-signup lede when you are already signed in."
+          ]
+        },
+        {
+          "heading": "Design",
+          "added": [
+            "Home is listed again in the full-screen menu alongside the header home control."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.23",
       "date": "2026-10-22",
       "title": "Cross-device email verify and skip create account when signed in",

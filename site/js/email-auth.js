@@ -25,7 +25,8 @@ export function authPanelHtml(mode = "login") {
       </form>
       <div class="auth-account" hidden>
         <p class="auth-lede">Signed in as <strong class="auth-email-label"></strong></p>
-        <button class="auth-submit" type="button" data-sign-out>Sign out</button>
+        <a class="auth-submit auth-settings" href="/settings.html">Settings</a>
+        <button class="auth-submit auth-sign-out" type="button" data-sign-out>Sign out</button>
       </div>
     </div>
   `;
@@ -128,9 +129,12 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
       if (!email) return;
       form.hidden = true;
       root.querySelector(".auth-tabs").hidden = true;
+      const lede = root.querySelector(".auth-card > .auth-lede");
+      if (lede) lede.hidden = true;
       account.hidden = false;
       root.querySelector(".auth-email-label").textContent = email;
       root.querySelector(".auth-title").textContent = "Your account";
+      root.querySelector(".auth-card")?.setAttribute("aria-label", "Your account");
     })
     .catch(() => {});
 

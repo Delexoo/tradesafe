@@ -3,6 +3,7 @@ import { authPanelHtml, bindEmailAuth } from "./email-auth.js";
 import { getSession } from "./supabase.js";
 
 const MENU_LINKS = [
+  { href: "/", label: "Home" },
   { href: "/create.html", label: "Create a trade" },
   { href: "/dashboard.html", label: "My trades" },
   { href: "/#how", label: "How it works" },
