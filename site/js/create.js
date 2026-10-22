@@ -1,6 +1,6 @@
 import { api } from "./api-client.js";
 import { deliveryForCategory, problemsForStep } from "./create-form.js";
-import { platformFeeCents, sellerNetCents } from "./platform-fees.js";
+import { platformFeeCents, sellerNetCents } from "./seller-net.js";
 import { money } from "./format.js";
 import { enhanceSelects } from "./listbox.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";

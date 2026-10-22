@@ -1,5 +1,5 @@
 import { api, ensureGuest } from "./api-client.js";
-import { platformFeeCents, sellerNetCents } from "./platform-fees.js";
+import { platformFeeCents, sellerNetCents } from "./seller-net.js";
 import { money, statusLabel } from "./format.js";
 import { enhanceSelect } from "./listbox.js";
 import { nextStep } from "./room-actions.js";

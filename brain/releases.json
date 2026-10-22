@@ -3,6 +3,20 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.32",
+      "date": "2026-10-22",
+      "title": "Create loads after seller-net path fix",
+      "tag": "v0.1.32",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Create a trade loads on production after the seller-net helper uses a path Vercel actually serves."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.31",
       "date": "2026-10-22",
       "title": "Create account gate works again",
