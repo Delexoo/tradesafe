@@ -1,0 +1,25 @@
+---
+description: On every commit, update, or deploy request, bump TradeSafe version, update the brain log, commit, and redeploy the web app
+alwaysApply: true
+---
+
+# Commit and deploy TradeSafe (vanilla web site)
+
+Whenever the user asks to **commit**, **update**, **push**, **release**, or **deploy** TradeSafe, raise the version first, then ship that same source. Do this before you tell the user the update is done. Do not wait to be asked for the version bump. Do not ship two commits on the same version.
+
+TradeSafe is a **browser website**: plain HTML/CSS/JS under `site/`, served by `server.mjs` (and deployable as static `site/` + API). Do not build Electron, Tauri, Windows/macOS installers, or app-store packages. Prefer editing visible pages in `site/*.html` so GitHub diffs stay easy to read.
+
+The version is one number. If the user did not name the next one, raise the patch number. Write that same number in every place below before you commit or deploy:
+
+- `package.json` `version`, and both `version` fields in `package-lock.json` (the root and `packages[""]` when present).
+- `brain/log.json`: this commit's notes go on a **new top entry** for that version, dated today. Leave shipped versions as they are. If the top entry is still the shipped version, add the new entry and move the unreleased notes into it. Run `npm run notes` so `brain/releases.json` matches.
+
+1. Raise the version. Add unlogged changes to the new `brain/log.json` entry under `added` or `fixes` (TradeSafe headings from the brain-log rule), then run `npm run notes`.
+2. Smoke-check the vanilla site (`npm run dev` / open key HTML pages) when UI changed. Run `npm test` when `src/lib` changed.
+3. Commit source, `site/`, `server.mjs`, brain log, and `brain/releases.json` together. Never commit `.env` or secrets. Prefer `C:\Users\TeamB\MasterVault\middleman` if `D:\` has filesystem errors — keep trees synced.
+4. Commit message from the new version title + `added`/`fixes` (concise, why-focused). Follow git safety rules.
+5. Push only when the user asked to push or deploy.
+6. On **deploy**: publish the site (Vercel static `site/` and/or Node `server.mjs`) with tokens from `.env` without printing them.
+7. Report the version, commit summary, and how to open the site (`npm run dev` → http://localhost:3000).
+
+If the user only asked to commit, do steps 1–4. If they only asked to update the brain log, do not bump or commit.

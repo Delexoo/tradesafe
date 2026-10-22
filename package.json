@@ -1,0 +1,24 @@
+{
+  "name": "tradesafe",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "TradeSafe — browser-only live transaction rooms (vanilla HTML site)",
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "notes": "node scripts/render-release-notes.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "stripe": "^17.7.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5",
+    "vitest": "^3.2.7"
+  }
+}

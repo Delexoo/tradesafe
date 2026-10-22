@@ -1,0 +1,91 @@
+{
+  "product": "TradeSafe",
+  "repo": "tradesafe",
+  "updates": [
+    {
+      "version": "0.1.1",
+      "date": "2026-10-22",
+      "title": "Vanilla HTML site with Hooxie design",
+      "tag": "v0.1.1",
+      "sections": [
+        {
+          "heading": "Design",
+          "added": [
+            "The product UI is plain HTML and CSS under site/, using the Hooxie light Manrope system instead of the previous dark SaaS React shell."
+          ],
+          "fixes": [
+            "App pages no longer render the old near-black SaaS component look."
+          ]
+        },
+        {
+          "heading": "Landing",
+          "added": [
+            "site/index.html is a cream marketing page with Create, Track, Complete, FAQ, and honest non-escrow copy."
+          ]
+        },
+        {
+          "heading": "Dashboard",
+          "added": [
+            "site/dashboard.html lists joined trades from the API with clear status and demo tags."
+          ]
+        },
+        {
+          "heading": "Wizard",
+          "added": [
+            "site/create.html walks through details, role, terms, and review, then shows a one-time invite link."
+          ]
+        },
+        {
+          "heading": "Room",
+          "added": [
+            "site/room.html shows dual progress bars with labels, payment and fulfillment cards, timeline, chat, and role actions."
+          ]
+        },
+        {
+          "heading": "Join",
+          "added": [
+            "site/join.html and /join/:token accept hashed invitation links in the browser."
+          ]
+        },
+        {
+          "heading": "API",
+          "added": [
+            "server.mjs serves the static site and JSON routes for trades, invites, messages, and profile using the Supabase service role on the server only."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Login and signup are standalone HTML pages that use the Supabase browser client."
+          ]
+        }
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-10-22",
+      "title": "Private live trade rooms on the web",
+      "tag": "v0.1.0",
+      "sections": [
+        {
+          "heading": "Landing",
+          "added": [
+            "The home page explains Create, Track, and Complete with honest copy that TradeSafe is not escrow or insurance."
+          ]
+        },
+        {
+          "heading": "API",
+          "added": [
+            "Server routes enforce a transaction state machine, participant permissions, rate limits, and Supabase-backed persistence with realtime updates."
+          ]
+        },
+        {
+          "heading": "Security",
+          "added": [
+            "Privileged payment states only move from provider or demo-server sources, with RLS on ts_ tables and security headers on responses."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+---
+description: Record every TradeSafe change in the brain log for commit messages and release notes
+alwaysApply: true
+---
+
+# Brain log
+
+`brain/log.json` is the source for commit messages and release notes for **TradeSafe** (this repo: `D:\MasterVault\middleman`). The current version is `package.json` `version`. A commit, update, or deploy raises that version everywhere listed in the commit-and-deploy rule before it ships. This commit's notes belong to the new version, not the one that already shipped.
+
+Before you finish, audit the current version. Every change a person would notice, and every fix that belongs in a commit, gets one sentence. Put that sentence in exactly one list:
+
+- `added` for something new, changed, or removed on purpose
+- `fixes` for something that was broken and now works
+
+Check these product areas (TradeSafe headings — not Hooxie Widget/Setup):
+
+- **Landing** — marketing home, FAQ, honesty copy
+- **Dashboard** — trade list, filters, empty states
+- **Room** — live transaction room, dual progress, chat, timeline, actions
+- **Wizard** — create-trade multi-step flow
+- **Auth** — login, signup, session
+- **Join** — invitation links and join screens
+- **Payments** — demo provider, Stripe adapter, webhooks (never claim escrow)
+- **Design** — Hooxie-adapted tokens, components, spacing, typography
+- **API** — routes, state machine, RLS, realtime
+- **Security** — headers, rate limits, permissions, honest payment language
+- **Settings** / **History** / **Admin** when those surfaces change
+
+Add a heading only when none of those fit.
+
+```json
+{ "heading": "Room", "added": ["Buyer and seller progress bars show percent labels beside the color tracks."], "fixes": ["The room top bar no longer uses a dark canvas behind the white panel."] }
+```
+
+- If that version has no entry, add one with today's date as `YYYY-MM-DD` and a short title.
+- If it exists, append the sentence. Leave older notes as they are.
+- Do not log formatting-only churn, reverted work, or a change that is already written there.
+- One note is one change. Do not use a `notes` list.
+- Run `npm run notes` so `brain/releases.json` matches the log.
+- Do not commit or publish only because the log changed.
+- Keep language honest: never log that TradeSafe “holds escrow” or “secures funds” unless a licensed provider actually does.

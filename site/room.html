@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-appearance="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trade room · TradeSafe</title>
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body data-page="room">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topnav" id="app-nav"></header>
+  <main id="content" class="shell">
+    <div class="panel" id="room-root">
+      <p class="loading" id="boot">Loading room…</p>
+      <div id="room" class="hidden">
+        <div class="room-top">
+          <div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+              <span class="status-dot" id="live-dot"><i></i><span>Connecting</span></span>
+              <span class="tag demo hidden" id="demo-tag">Demo</span>
+              <span class="tag" id="status-tag">—</span>
+            </div>
+            <h1 id="title">—</h1>
+            <p class="note" style="margin:4px 0 0" id="ref">Ref —</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="ghost btn-sm" id="share">Copy invite</button>
+            <a class="ghost btn-sm" href="/dashboard.html">Dashboard</a>
+          </div>
+        </div>
+
+        <div class="participants" id="participants"></div>
+
+        <div class="progress-grid" style="margin-bottom:16px">
+          <div class="progress-box">
+            <div class="progress-meta"><span>Buyer · payment progress</span><span id="buyer-pct">0%</span></div>
+            <div class="bar"><i id="buyer-bar" style="width:0%"></i></div>
+            <p class="progress-hint">Terms, authorization, and receipt confirmation</p>
+          </div>
+          <div class="progress-box">
+            <div class="progress-meta"><span>Seller · fulfillment progress</span><span id="seller-pct">0%</span></div>
+            <div class="bar seller"><i id="seller-bar" style="width:0%"></i></div>
+            <p class="progress-hint">Prep, shipment or transfer, and delivery evidence</p>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:16px">
+          <section class="card">
+            <div class="card-hd"><h2>Buyer payment</h2></div>
+            <div class="card-bd" id="payment-card"></div>
+          </section>
+          <section class="card">
+            <div class="card-hd"><h2>Seller fulfillment</h2></div>
+            <div class="card-bd" id="fulfill-card"></div>
+          </section>
+        </div>
+
+        <section class="card" style="margin-bottom:16px">
+          <div class="card-hd"><h2>Timeline</h2></div>
+          <div class="card-bd"><ul class="timeline" id="timeline"></ul></div>
+        </section>
+
+        <div class="grid-2">
+          <section class="card">
+            <div class="card-hd"><h2>Activity</h2></div>
+            <div class="card-bd" id="activity"></div>
+          </section>
+          <section class="card">
+            <div class="card-hd"><h2>Chat</h2></div>
+            <div class="card-bd">
+              <div class="chat" id="chat"></div>
+              <form class="chat-form" id="chat-form">
+                <input class="field" id="chat-input" maxlength="4000" placeholder="Message participants…" required>
+                <button class="btn" type="submit">Send</button>
+              </form>
+            </div>
+          </section>
+        </div>
+
+        <section class="card" style="margin-top:16px">
+          <div class="card-hd"><h2>Your actions</h2></div>
+          <div class="card-bd actions" id="actions"></div>
+        </section>
+      </div>
+      <div id="room-error" class="empty hidden">
+        <h3>Could not load this room</h3>
+        <p id="room-error-text">You may not have access, or the link is invalid.</p>
+        <p style="margin-top:16px"><a class="btn" href="/dashboard.html">Back to dashboard</a></p>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/js/room.js"></script>
+</body>
+</html>

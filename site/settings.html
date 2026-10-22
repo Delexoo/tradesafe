@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en" data-appearance="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings · TradeSafe</title>
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body data-page="settings">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topnav" id="app-nav"></header>
+  <main id="content" class="shell">
+    <div class="panel wide">
+      <h1>Settings</h1>
+      <p class="note">Profile and account preferences for TradeSafe.</p>
+      <form id="profile-form" class="form-stack" style="max-width:28rem">
+        <div>
+          <label class="field-label" for="display_name">Display name</label>
+          <input class="field" id="display_name" required maxlength="100">
+        </div>
+        <div>
+          <label class="field-label" for="email">Email</label>
+          <input class="field" id="email" type="email" disabled>
+          <p class="hint">Managed by your sign-in provider.</p>
+        </div>
+        <p id="message" class="alert hidden" role="status"></p>
+        <p id="error" class="field-error hidden" role="alert"></p>
+        <button class="btn" type="submit">Save</button>
+      </form>
+      <div style="margin-top:32px">
+        <button type="button" class="ghost" id="signout">Sign out</button>
+      </div>
+      <div class="alert" style="margin-top:24px">
+        <div>
+          <strong>About payments</strong>
+          <p style="margin:6px 0 0">TradeSafe does not custody funds. Demo trades are simulated. Live Stripe mode uses authorization holds when configured — not licensed escrow.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/js/settings.js"></script>
+</body>
+</html>

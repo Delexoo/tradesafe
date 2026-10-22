@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TradeSafe — Live transaction coordination</title>
+  <meta name="description" content="Private, link-based trade rooms. Browser-only — no download. Honest about payment holds and limits.">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="marketing" data-page="home">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topnav">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.2 8.4 7 9 3.8-.6 7-4 7-9V6l-7-3z"/></svg>
+      </span>
+      TradeSafe
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="ghost btn-sm" href="/login.html">Log in</a>
+      <a class="btn btn-sm" href="/signup.html">Get started</a>
+    </div>
+  </header>
+
+  <main id="content">
+    <section class="hero">
+      <p class="kicker">Private trade coordination</p>
+      <h1>TradeSafe live rooms for deals you already trust</h1>
+      <p class="lede">Create a temporary room, invite buyer and seller, track dual progress, and chat — with clear language about payment holds and limits.</p>
+      <div class="cta-row">
+        <a class="btn btn-pill" href="/signup.html">Create a trade</a>
+        <a class="btn btn-pill light" href="/login.html">Log in</a>
+      </div>
+      <div class="alert" style="max-width:36rem;margin:2rem auto 0;text-align:left">
+        <div>
+          <strong>Security honesty</strong>
+          <p style="margin:6px 0 0">TradeSafe is not a bank, escrow agent, or insurer. Status reflects <strong>provider-authorized holds</strong> or <strong>simulated (demo)</strong> state only — never a TradeSafe vault.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="band" id="how">
+      <h2>How it works</h2>
+      <p class="note" style="margin-top:8px">Three steps from invite to completion — no marketplace browsing.</p>
+      <div class="steps">
+        <article class="step-card">
+          <div class="step-n">Step 1</div>
+          <h3>Create</h3>
+          <p>Start a private trade room with amount, terms, and roles. Share a secure invite link.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-n">Step 2</div>
+          <h3>Track</h3>
+          <p>Both sides see buyer payment progress and seller fulfillment, plus live activity and chat.</p>
+        </article>
+        <article class="step-card">
+          <div class="step-n">Step 3</div>
+          <h3>Complete</h3>
+          <p>Confirm delivery and release per your terms. Holds are provider-authorized when enabled — not TradeSafe escrow.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="band" id="faq" style="max-width:40rem">
+      <h2>FAQ</h2>
+      <dl style="margin-top:1.5rem">
+        <div style="padding:1rem 0;border-bottom:1px solid var(--marketing-line)">
+          <dt style="font-weight:650">Does TradeSafe hold my money in escrow?</dt>
+          <dd style="margin:0.4rem 0 0;color:var(--marketing-muted);font-size:14px">No. Demo trades are simulated. Live trades may use a payment provider authorization hold — not a TradeSafe vault.</dd>
+        </div>
+        <div style="padding:1rem 0;border-bottom:1px solid var(--marketing-line)">
+          <dt style="font-weight:650">Do I need to install an app?</dt>
+          <dd style="margin:0.4rem 0 0;color:var(--marketing-muted);font-size:14px">No. TradeSafe is a normal website. Open the invite link in any modern browser.</dd>
+        </div>
+        <div style="padding:1rem 0">
+          <dt style="font-weight:650">What is demo mode?</dt>
+          <dd style="margin:0.4rem 0 0;color:var(--marketing-muted);font-size:14px">Demo trades exercise the full flow with simulated holds. They are labeled DEMO and never touch real money.</dd>
+        </div>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="band" style="padding:0">
+      <strong style="color:var(--marketing-ink)">TradeSafe</strong>
+      <p style="margin:0.5rem 0 0">Browser-accessible web app — no download required. © <span id="y"></span></p>
+    </div>
+  </footer>
+  <script>document.getElementById("y").textContent = new Date().getFullYear();</script>
+</body>
+</html>

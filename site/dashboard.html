@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" data-appearance="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · TradeSafe</title>
+  <link rel="stylesheet" href="/css/fonts.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body data-page="dashboard">
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topnav" id="app-nav"></header>
+  <main id="content" class="shell">
+    <div class="panel">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="note">Your active trades, items awaiting action, and recent rooms.</p>
+        </div>
+        <a class="btn" href="/create.html">New trade</a>
+      </div>
+      <div id="status" class="loading">Loading trades…</div>
+      <div id="list" class="rows hidden"></div>
+      <div id="empty" class="empty hidden">
+        <h3>No trades yet</h3>
+        <p>Create a private room and share the invite link with your counterparty.</p>
+        <p style="margin-top:16px"><a class="btn" href="/create.html">Create a trade</a></p>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/js/dashboard.js"></script>
+</body>
+</html>
