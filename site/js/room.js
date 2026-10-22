@@ -1,7 +1,19 @@
 import { api, ensureGuest } from "./api-client.js";
-import { money, platformFeeCents, sellerNetCents, statusLabel } from "./format.js";
+import { money, statusLabel } from "./format.js";
 import { enhanceSelect } from "./listbox.js";
 import { nextStep } from "./room-actions.js";
+
+function platformTakeCents(amountCents) {
+  const amount = Math.max(0, Math.round(Number(amountCents) || 0));
+  if (amount < 1) return 0;
+  const take = Math.round(amount * 0.029) + 30;
+  return Math.min(take, Math.max(0, amount - 1));
+}
+
+function sellerPayoutCents(amountCents) {
+  const amount = Math.max(0, Math.round(Number(amountCents) || 0));
+  return Math.max(0, amount - platformTakeCents(amount));
+}
 
 const ANON_AVATAR = `<span class="avatar anon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.2" fill="currentColor"/><path d="M5.2 19.2c1.1-3 3.6-4.5 6.8-4.5s5.7 1.5 6.8 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>`;
 
@@ -56,8 +68,8 @@ function render(data, userId) {
   const myRole = data.myRole;
 
   document.getElementById("title").textContent = tx.title;
-  const fee = platformFeeCents(tx.amount_cents);
-  const net = sellerNetCents(tx.amount_cents);
+  const fee = platformTakeCents(tx.amount_cents);
+  const net = sellerPayoutCents(tx.amount_cents);
   document.getElementById("amount-line").textContent =
     `${money(tx.amount_cents, tx.currency)} · seller net ~${money(net, tx.currency)}`;
   document.getElementById("ref").textContent = `Ref ${tx.reference_code}`;
@@ -152,8 +164,8 @@ function renderActions(tx, role, data, userId) {
   const box = document.getElementById("actions");
   const paidWaiting = new URLSearchParams(location.search).get("paid") === "1";
   const terms = tx.terms && typeof tx.terms === "object" ? tx.terms : {};
-  const fee = platformFeeCents(tx.amount_cents);
-  const net = sellerNetCents(tx.amount_cents);
+  const fee = platformTakeCents(tx.amount_cents);
+  const net = sellerPayoutCents(tx.amount_cents);
   const step = nextStep({
     status: tx.status,
     role,

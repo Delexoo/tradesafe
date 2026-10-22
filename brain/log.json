@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.34",
+      "date": "2026-10-22",
+      "title": "Create and room load without blocked scripts",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Create a trade and rooms keep seller-net math inside the page scripts so Sign up / Log in is not blocked by a missing production file."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.33",
       "date": "2026-10-22",
       "title": "Create sign-up works without missing script",

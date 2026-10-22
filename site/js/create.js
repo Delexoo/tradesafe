@@ -1,6 +1,18 @@
 import { api } from "./api-client.js";
 import { deliveryForCategory, problemsForStep } from "./create-form.js";
-import { money, platformFeeCents, sellerNetCents } from "./format.js";
+import { money } from "./format.js";
+
+function platformTakeCents(amountCents) {
+  const amount = Math.max(0, Math.round(Number(amountCents) || 0));
+  if (amount < 1) return 0;
+  const take = Math.round(amount * 0.029) + 30;
+  return Math.min(take, Math.max(0, amount - 1));
+}
+
+function sellerPayoutCents(amountCents) {
+  const amount = Math.max(0, Math.round(Number(amountCents) || 0));
+  return Math.max(0, amount - platformTakeCents(amount));
+}
 import { enhanceSelects } from "./listbox.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
 import { getSupabase, waitForAuthSession } from "./supabase.js";
@@ -136,8 +148,8 @@ function paintFeeHint() {
     return;
   }
   const cents = Math.round(amount * 100);
-  const fee = platformFeeCents(cents);
-  const net = sellerNetCents(cents);
+  const fee = platformTakeCents(cents);
+  const net = sellerPayoutCents(cents);
   hint.textContent = `Buyer pays ${money(cents, currency)}. Seller receives about ${money(net, currency)} after TradeSafe’s fee of ${money(fee, currency)} (2.9% + $0.30). Stripe processes the payment.`;
 }
 
@@ -236,7 +248,7 @@ async function refreshPayout() {
   const cents = Math.round(amount * 100);
   const feeLine =
     Number.isFinite(amount) && amount >= 0.01
-      ? ` Your share of this trade is about ${money(sellerNetCents(cents), currency)} after the ${money(platformFeeCents(cents), currency)} TradeSafe fee.`
+      ? ` Your share of this trade is about ${money(sellerPayoutCents(cents), currency)} after the ${money(platformTakeCents(cents), currency)} TradeSafe fee.`
       : "";
   document.getElementById("payout-status").textContent = payoutReady
     ? `Payout account ready. Stripe sends your share there after the buyer confirms.${feeLine} TradeSafe does not hold the money.`
