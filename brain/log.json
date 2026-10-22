@@ -3,6 +3,25 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.19",
+      "date": "2026-10-22",
+      "title": "RLS lockdown, rate limits, and security headers",
+      "sections": [
+        {
+          "heading": "Security",
+          "added": [
+            "A migration blocks client is_admin escalation and denies direct client updates to trade status and participants.",
+            "Guest, invite, email-handoff, and report routes are rate-limited; production requires SECURITY_IP_PEPPER.",
+            "Optional ADMIN_UUID_ALLOWLIST gates the security admin console in addition to is_admin.",
+            "API and static responses send CSP and related security headers; Vercel headers match."
+          ],
+          "fixes": [
+            "New invites default to a single use instead of ten."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.18",
       "date": "2026-10-22",
       "title": "Enforce trade status gates and signed payment webhooks",

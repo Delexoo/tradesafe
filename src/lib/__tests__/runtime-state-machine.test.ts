@@ -5,6 +5,11 @@ import {
   canTransition,
   InvalidTransitionError,
 } from "../../../lib/state-machine.mjs";
+import {
+  assertRateLimit,
+  RateLimitError,
+  resetRateLimitMemoryStore,
+} from "../../../lib/rate-limit.mjs";
 
 describe("runtime state-machine (server.mjs)", () => {
   it("allows happy-path room advances", () => {
@@ -67,5 +72,16 @@ describe("unsigned webhook rejection", () => {
 
   it("admits only when secret and signature are present", () => {
     expect(webhookAdmission(true, true)).toEqual({ ok: true });
+  });
+});
+
+describe("rate-limit", () => {
+  it("blocks after the window fills", async () => {
+    resetRateLimitMemoryStore();
+    await assertRateLimit("test:rl", 2, 60_000);
+    await assertRateLimit("test:rl", 2, 60_000);
+    await expect(assertRateLimit("test:rl", 2, 60_000)).rejects.toBeInstanceOf(
+      RateLimitError,
+    );
   });
 });

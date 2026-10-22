@@ -47,6 +47,8 @@ import {
 import { platformFeeCents } from "./lib/fees.mjs";
 import { InvalidTransitionError } from "./lib/state-machine.mjs";
 import { advanceTransactionStatus, requireStatus } from "./lib/tx-status.mjs";
+import { assertRateLimit } from "./lib/rate-limit.mjs";
+import { securityHeadersObject } from "./lib/security-headers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -165,12 +167,20 @@ async function serveStatic(res, pathname) {
   const ext = path.extname(filePath);
   res.writeHead(200, {
     "Content-Type": MIME[ext] || "application/octet-stream",
-    "Cache-Control": ext === ".html" || ext === ".js" || ext === ".css" ? "no-cache" : "public, max-age=3600",
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Cache-Control":
+      ext === ".html" || ext === ".js" || ext === ".css"
+        ? "no-cache"
+        : "public, max-age=3600",
+    ...securityHeadersObject(),
   });
   fs.createReadStream(filePath).pipe(res);
+}
+
+async function rateLimitOrThrow(req, bucket, limit, windowMs) {
+  const ip = hashIp(clientIp(req)) || "unknown";
+  await assertRateLimit(`${bucket}:${ip}`, limit, windowMs, {
+    supabase: getAdmin(),
+  });
 }
 
 async function handleApi(req, res, url) {
@@ -212,12 +222,14 @@ async function handleApi(req, res, url) {
   }
 
   if (p === "/api/invitations/preview" && req.method === "GET") {
+    await rateLimitOrThrow(req, "invite_preview", 60, 60_000);
     const token = url.searchParams.get("token") || "";
     json(res, 200, await previewInvite(token), req);
     return;
   }
 
   if (p === "/api/guest/session" && req.method === "POST") {
+    await rateLimitOrThrow(req, "guest_session", 20, 60_000);
     const body = await readJson(req);
     const actor = await ensureGuestActor(
       req,
@@ -258,6 +270,7 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/auth/email-handoff" && req.method === "POST") {
     try {
+      await rateLimitOrThrow(req, "email_handoff", 15, 60_000);
       const body = req._body || (await readJson(req));
       json(res, 200, await createEmailHandoff(getAdmin(), body), req);
     } catch (err) {
@@ -268,6 +281,7 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/auth/email-handoff/complete" && req.method === "POST") {
     try {
+      await rateLimitOrThrow(req, "email_handoff_complete", 30, 60_000);
       const body = req._body || (await readJson(req));
       json(
         res,
@@ -287,6 +301,7 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/auth/email-handoff/claim" && req.method === "POST") {
     try {
+      await rateLimitOrThrow(req, "email_handoff_claim", 30, 60_000);
       const body = req._body || (await readJson(req));
       json(res, 200, await claimEmailHandoff(getAdmin(), body), req);
     } catch (err) {
@@ -363,6 +378,7 @@ async function handleApi(req, res, url) {
   }
 
   if (p === "/api/security/reports" && req.method === "POST") {
+    await rateLimitOrThrow(req, "security_report", 10, 60_000);
     const body = await readJson(req);
     json(
       res,
@@ -583,6 +599,7 @@ async function handleApi(req, res, url) {
   }
 
   if (p === "/api/invitations/join" && req.method === "POST") {
+    await rateLimitOrThrow(req, "invite_join", 30, 60_000);
     const body = req._body || (await readJson(req));
     if (body.display_name) {
       actor = await ensureGuestActor(
@@ -610,6 +627,8 @@ async function handleApi(req, res, url) {
       role: body.role || "buyer",
       created_by: actor.id,
       expires_at: new Date(Date.now() + 7 * 864e5).toISOString(),
+      max_uses: 1,
+      single_use: true,
     });
     json(res, 201, { token: raw, url: `/join/${raw}` }, req);
     return;
@@ -768,7 +787,8 @@ async function createTrade(actor, input, req) {
     role: other,
     created_by: actor.id,
     expires_at: new Date(Date.now() + 7 * 864e5).toISOString(),
-    max_uses: 10,
+    max_uses: 1,
+    single_use: true,
   });
 
   await getAdmin().from("ts_events").insert({
@@ -1595,10 +1615,13 @@ function readJson(req) {
 function json(res, status, body, req) {
   const payload = JSON.stringify(body);
   const headers = {
+    ...securityHeadersObject(),
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff",
   };
+  if (status === 429 && body?.error) {
+    headers["Retry-After"] = "60";
+  }
   const cookies = req?._pendingCookies || [];
   if (cookies.length === 1) headers["Set-Cookie"] = cookies[0];
   else if (cookies.length > 1) headers["Set-Cookie"] = cookies;
