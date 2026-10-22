@@ -6,7 +6,7 @@ import {
   resumeEmailHandoff,
   sendEmailLinkAuto,
 } from "./email-handoff.js";
-import { getSession, getSupabase } from "./supabase.js";
+import { getSupabase, waitForAuthSession } from "./supabase.js";
 
 const authGate = document.getElementById("auth-gate");
 const accountSettings = document.getElementById("account-settings");
@@ -185,7 +185,7 @@ signOutBtn?.addEventListener("click", async () => {
   location.href = "/settings.html";
 });
 
-const session = await getSession();
+const session = await waitForAuthSession();
 if (session?.user?.email) {
   showAccountSettings();
   try {

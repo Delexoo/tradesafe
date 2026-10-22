@@ -1,4 +1,4 @@
-import { getSession, getSupabase } from "./supabase.js";
+import { getSupabase, waitForAuthSession } from "./supabase.js";
 import { emailProblem, safeNextPath } from "./auth-email.js";
 import {
   accountDetectedForEmail,
@@ -112,7 +112,7 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
     if (session?.user) location.href = safeNextPath(location.search);
   });
 
-  getSession()
+  waitForAuthSession()
     .then((session) => {
       const email = session?.user?.email;
       if (!email) return;

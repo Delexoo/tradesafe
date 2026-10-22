@@ -1,6 +1,5 @@
 /** Shared Hooxie-style header + footer for TradeSafe pages. */
 import { authPanelHtml, bindEmailAuth } from "./email-auth.js";
-import { getSession } from "./supabase.js";
 
 const MENU_LINKS = [
   { href: "/", label: "Home" },
@@ -60,19 +59,18 @@ export function mountChrome({ active } = {}) {
       if (event.key === "Escape") setAuthOpen(false);
     });
 
-    getSession()
-      .then((session) => {
+    import("./supabase.js").then(async ({ getSupabase, waitForAuthSession }) => {
+      try {
+        const session = await waitForAuthSession();
         if (session?.user?.email) loginBtn.textContent = "Account";
-      })
-      .catch(() => {});
-
-    import("./supabase.js").then(({ getSupabase }) =>
-      getSupabase().then((sb) => {
-        sb.auth.onAuthStateChange((_event, session) => {
-          loginBtn.textContent = session?.user?.email ? "Account" : "Log in";
-        });
-      }),
-    );
+      } catch {
+        /* stay on Log in */
+      }
+      const sb = await getSupabase();
+      sb.auth.onAuthStateChange((_event, session) => {
+        loginBtn.textContent = session?.user?.email ? "Account" : "Log in";
+      });
+    });
   }
 
   const footer = document.getElementById("site-footer");

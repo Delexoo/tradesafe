@@ -4,7 +4,7 @@ import { platformFeeCents, sellerNetCents } from "./fees.js";
 import { money } from "./format.js";
 import { enhanceSelects } from "./listbox.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
-import { getSession, getSupabase } from "./supabase.js";
+import { getSupabase, waitForAuthSession } from "./supabase.js";
 import {
   accountDetectedForEmail,
   rememberEmailAccount,
@@ -436,12 +436,16 @@ function showAccountGate() {
 
 function showCheckingGate() {
   const gate = document.getElementById("account-gate");
+  const title = document.getElementById("account-title");
+  const note = document.getElementById("account-note");
+  if (title) title.textContent = "One moment";
+  if (note) note.textContent = "Checking if you are already signed in…";
   let checking = document.getElementById("account-checking");
   if (!checking) {
     checking = document.createElement("p");
     checking.id = "account-checking";
     checking.className = "note";
-    checking.textContent = "Checking if you are already signed in…";
+    checking.hidden = true;
     gate.insertBefore(checking, accountForm);
   }
   accountForm?.classList.add("hidden");
@@ -500,7 +504,7 @@ document.documentElement.dataset.createReady = "1";
 showCheckingGate();
 
 async function enterIfSignedIn() {
-  const session = await getSession();
+  const session = await waitForAuthSession();
   if (session?.user) {
     openWizard(session);
     return true;
@@ -508,16 +512,21 @@ async function enterIfSignedIn() {
   return false;
 }
 
-if (await enterIfSignedIn()) {
-  /* already in the wizard */
-} else {
-  const handed = await resumeEmailHandoff("/create.html");
-  if (handed?.user) openWizard(handed);
-  else {
-    showAccountGate();
-    const sb = await getSupabase();
-    sb.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) openWizard(session);
-    });
+try {
+  if (await enterIfSignedIn()) {
+    /* already in the wizard */
+  } else {
+    const handed = await resumeEmailHandoff("/create.html");
+    if (handed?.user) openWizard(handed);
+    else {
+      showAccountGate();
+      const sb = await getSupabase();
+      sb.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) openWizard(session);
+      });
+    }
   }
+} catch (err) {
+  console.error(err);
+  showAccountGate();
 }

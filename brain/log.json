@@ -3,6 +3,25 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.27",
+      "date": "2026-10-22",
+      "title": "Sticky footer and signed-in create gate",
+      "sections": [
+        {
+          "heading": "Design",
+          "fixes": [
+            "Footers sit at the bottom of short pages instead of floating under the content."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Create, Settings, and the header wait for the restored session before asking you to sign in again."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.26",
       "date": "2026-10-22",
       "title": "Auto log in or sign up from known email",

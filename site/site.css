@@ -9,17 +9,28 @@
 * { box-sizing: border-box; }
 
 html {
+  height: 100%;
   scrollbar-width: none;
 }
 html::-webkit-scrollbar { display: none; }
 
 body {
   margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background: var(--bg);
   color: var(--ink);
   font-family: Manrope, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.55;
+}
+
+body > main,
+body > main#content {
+  flex: 1 0 auto;
+  width: 100%;
 }
 
 a { color: inherit; }
@@ -2049,6 +2060,9 @@ form button {
 }
 
 footer {
+  flex-shrink: 0;
+  width: min(68rem, calc(100% - 2.5rem));
+  margin: auto auto 0;
   padding: 2.6rem 0 2.8rem;
   border-top: 1px solid var(--line);
   color: var(--muted);
