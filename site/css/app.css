@@ -575,10 +575,13 @@ body[data-page="room"] main#content {
   font-weight: 650;
   letter-spacing: -0.03em;
 }
-.turn-line {
-  margin: 4px 0 0;
-  font-size: 15px;
+.actions .turn-line {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
+.actions .field { margin-bottom: 2px; }
 .people-sm { gap: 6px; margin: 0; }
 .people-sm .person {
   gap: 6px;

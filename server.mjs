@@ -50,8 +50,11 @@ const SUPABASE_URL =
 const ANON =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
 const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DEMO_MODE = process.env.DEMO_MODE !== "false";
-const PAYMENT_PROVIDER = process.env.PAYMENT_PROVIDER || "demo";
+const STRIPE_ON = Boolean(process.env.STRIPE_SECRET_KEY);
+const DEMO_MODE = !STRIPE_ON && process.env.DEMO_MODE !== "false";
+const PAYMENT_PROVIDER = STRIPE_ON
+  ? "stripe"
+  : process.env.PAYMENT_PROVIDER || "demo";
 
 function requireEnv() {
   if (!SUPABASE_URL || !ANON || !SERVICE) {
@@ -472,7 +475,7 @@ async function handleApi(req, res, url) {
       json(
         res,
         200,
-        await performAction(actor.id, tradeId, body.action, body.payload || {}),
+        await performAction(actor.id, tradeId, body.action, body.payload || {}, req),
         req,
       );
       return;
@@ -592,7 +595,7 @@ async function createTrade(actor, input, req) {
     throw err;
   }
 
-  const isDemo = DEMO_MODE || PAYMENT_PROVIDER !== "stripe";
+  const isDemo = !STRIPE_ON;
   const creatorRole = input.creator_role === "buyer" ? "buyer" : "seller";
   const other = creatorRole === "buyer" ? "seller" : "buyer";
   const termsBody = {
@@ -754,15 +757,73 @@ async function getRoom(userId, tradeId) {
     getAdmin().from("ts_messages").select("*, ts_profiles(display_name, avatar_url)").eq("transaction_id", tradeId).order("created_at", { ascending: true }).limit(200),
   ]);
 
+  let payment = payments?.[0] || null;
+  let transaction = tx;
+  try {
+    const synced = await syncStripeCheckout(transaction, payment);
+    if (synced) {
+      payment = synced.payment;
+      transaction = synced.transaction;
+    }
+  } catch {
+    // The room still loads if Stripe cannot be read yet.
+  }
+
   return {
-    transaction: tx,
+    transaction,
     participants: participants || [],
     milestones: milestones || [],
-    payment: payments?.[0] || null,
+    payment,
     fulfillment: fulfillment || null,
     events: events || [],
     messages: messages || [],
     myRole: participant?.role || null,
+  };
+}
+
+async function syncStripeCheckout(tx, payment) {
+  if (!payment || !process.env.STRIPE_SECRET_KEY) return null;
+  const sessionId = String(payment.provider_session_id || "");
+  if (!sessionId.startsWith("cs_")) return null;
+  if (String(payment.provider_payment_id || "").startsWith("pi_") && payment.status === "authorized") {
+    return null;
+  }
+  const Stripe = (await import("stripe")).default;
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const piId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id;
+  if (!piId) return null;
+  const intent = await stripe.paymentIntents.retrieve(piId);
+  const status =
+    intent.status === "requires_capture"
+      ? "authorized"
+      : intent.status === "succeeded"
+        ? "captured"
+        : null;
+  if (!status) return null;
+  await getAdmin()
+    .from("ts_payments")
+    .update({ provider: "stripe", provider_payment_id: piId })
+    .eq("id", payment.id);
+  if (payment.status !== status) {
+    await applyProviderPaymentUpdateImpl(getAdmin(), {
+      provider_payment_id: piId,
+      status,
+      source: "provider_api",
+      idempotency_key: `sync_${piId}_${status}`,
+    });
+  }
+  const { data: fresh } = await getAdmin()
+    .from("ts_transactions")
+    .select("*")
+    .eq("id", tx.id)
+    .single();
+  return {
+    payment: { ...payment, provider: "stripe", provider_payment_id: piId, status },
+    transaction: fresh || tx,
   };
 }
 
@@ -999,7 +1060,16 @@ async function joinInvite(actor, body, req) {
   return { transactionId: inv.transaction_id, role: inv.role };
 }
 
-async function performAction(userId, tradeId, action, payload) {
+function publicOrigin(req) {
+  const proto = String(req?.headers?.["x-forwarded-proto"] || "https").split(",")[0].trim();
+  const host = String(req?.headers?.["x-forwarded-host"] || req?.headers?.host || "")
+    .split(",")[0]
+    .trim();
+  if (host) return `${proto}://${host}`;
+  return process.env.NEXT_PUBLIC_APP_URL || "https://tradesafe-alpha.vercel.app";
+}
+
+async function performAction(userId, tradeId, action, payload, req) {
   const room = await getRoom(userId, tradeId);
   const role = room.myRole;
   if (!role) throw new Error("Forbidden");
@@ -1020,17 +1090,56 @@ async function performAction(userId, tradeId, action, payload) {
   }
 
   if (action === "initiate_payment") {
-    if (role !== "buyer") throw new Error("Only buyer");
-    const paymentId = `demo_pi_${randomBytes(8).toString("hex")}`;
-    await getAdmin().from("ts_payments").insert({
-      transaction_id: tradeId,
-      provider: isDemo ? "demo" : PAYMENT_PROVIDER,
-      provider_payment_id: paymentId,
-      provider_session_id: `sess_${paymentId}`,
+    if (role !== "buyer") throw new Error("Only the buyer can pay");
+    if (!process.env.STRIPE_SECRET_KEY) {
+      const err = new Error("Card payments are not set up on this server yet.");
+      err.status = 503;
+      throw err;
+    }
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const origin = publicOrigin(req);
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      payment_intent_data: {
+        capture_method: "manual",
+        metadata: {
+          transaction_id: tradeId,
+          reference_code: tx.reference_code,
+        },
+      },
+      line_items: [
+        {
+          price_data: {
+            currency: String(tx.currency || "usd").toLowerCase(),
+            unit_amount: tx.amount_cents,
+            product_data: {
+              name: tx.title || `Trade ${tx.reference_code}`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${origin}/room.html?id=${encodeURIComponent(tradeId)}&paid=1`,
+      cancel_url: `${origin}/room.html?id=${encodeURIComponent(tradeId)}&paid=0`,
+      metadata: { transaction_id: tradeId },
+    });
+    const paymentPatch = {
+      provider: "stripe",
+      provider_payment_id: session.id,
+      provider_session_id: session.id,
       amount_cents: tx.amount_cents,
       currency: tx.currency,
       status: "pending",
-    });
+    };
+    if (room.payment?.id) {
+      await getAdmin().from("ts_payments").update(paymentPatch).eq("id", room.payment.id);
+    } else {
+      await getAdmin().from("ts_payments").insert({
+        transaction_id: tradeId,
+        ...paymentPatch,
+      });
+    }
     await getAdmin()
       .from("ts_transactions")
       .update({ status: "payment_pending" })
@@ -1048,10 +1157,10 @@ async function performAction(userId, tradeId, action, payload) {
       transaction_id: tradeId,
       actor_id: userId,
       event_type: "payment_initiated",
-      summary: isDemo ? "DEMO: Payment initiated" : "Payment initiated",
+      summary: "Buyer opened Stripe to authorize the card",
       verification_source: "user_reported",
     });
-    return { ok: true };
+    return { ok: true, url: session.url };
   }
 
   if (action === "demo_authorize_payment") {
@@ -1130,7 +1239,20 @@ async function performAction(userId, tradeId, action, payload) {
   }
 
   if (action === "confirm_delivery") {
-    if (role !== "buyer") throw new Error("Only buyer");
+    if (role !== "buyer") throw new Error("Only the buyer can confirm");
+    const pi = room.payment?.provider_payment_id || "";
+    if (!String(pi).startsWith("pi_")) {
+      const err = new Error(
+        "Stripe has not confirmed the card yet. Stay on this page, then confirm again.",
+      );
+      err.status = 409;
+      throw err;
+    }
+    if (!process.env.STRIPE_SECRET_KEY) {
+      const err = new Error("Card payments are not set up on this server yet.");
+      err.status = 503;
+      throw err;
+    }
     await getAdmin()
       .from("ts_fulfillments")
       .update({
@@ -1147,49 +1269,48 @@ async function performAction(userId, tradeId, action, payload) {
       })
       .eq("transaction_id", tradeId)
       .eq("key", "buyer_receipt_confirmed");
-    if (isDemo && DEMO_MODE) {
-      if (room.payment) {
-        await getAdmin()
-          .from("ts_payments")
-          .update({
-            status: "captured",
-            captured_at: new Date().toISOString(),
-          })
-          .eq("id", room.payment.id);
-      }
-      await getAdmin()
-        .from("ts_transactions")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", tradeId);
-      await getAdmin()
-        .from("ts_milestones")
-        .update({
-          status: "completed",
-          completed_at: new Date().toISOString(),
-          verification_source: "provider_confirmed",
-        })
-        .eq("transaction_id", tradeId)
-        .eq("key", "shared_trade_completed");
-      await getAdmin().from("ts_events").insert({
-        transaction_id: tradeId,
-        event_type: "completed",
-        summary: "DEMO: Transaction completed (simulated capture)",
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    await stripe.paymentIntents.capture(pi);
+    await applyProviderPaymentUpdateImpl(getAdmin(), {
+      provider_payment_id: pi,
+      status: "captured",
+      source: "provider_api",
+      idempotency_key: `capture_${pi}`,
+      actor_id: userId,
+    });
+    await getAdmin()
+      .from("ts_transactions")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", tradeId);
+    await getAdmin()
+      .from("ts_milestones")
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
         verification_source: "provider_confirmed",
-        payload: { demo: true },
-      });
-    } else {
-      await getAdmin()
-        .from("ts_transactions")
-        .update({ status: "completion_pending" })
-        .eq("id", tradeId);
-    }
+      })
+      .eq("transaction_id", tradeId)
+      .eq("key", "shared_trade_completed");
+    await getAdmin().from("ts_events").insert({
+      transaction_id: tradeId,
+      actor_id: userId,
+      event_type: "completed",
+      summary: "Buyer confirmed receipt and Stripe captured the card authorization",
+      verification_source: "provider_confirmed",
+    });
     return { ok: true };
   }
 
   if (action === "open_dispute") {
+    if (tx.status === "disputed") {
+      const err = new Error("A dispute is already open. Use messages.");
+      err.status = 409;
+      throw err;
+    }
     await getAdmin().from("ts_disputes").insert({
       transaction_id: tradeId,
       opened_by: userId,

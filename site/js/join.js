@@ -27,7 +27,7 @@ try {
   summaryEl.classList.remove("hidden");
   summaryEl.innerHTML = `
     <p><strong>${escapeHtml(tx.title)}</strong></p>
-    <p class="hint">${escapeHtml(tx.reference_code)} · ${statusLabel(tx.status)}${tx.is_demo ? " · DEMO" : ""}</p>
+    <p class="hint">${escapeHtml(tx.reference_code)} · ${statusLabel(tx.status)}</p>
     <p style="margin-top:8px">${money(tx.amount_cents, tx.currency)}</p>
     <p class="hint">You’ll join as <strong>${escapeHtml(preview.role)}</strong>. Private chat and evidence stay locked until you join.</p>
   `;

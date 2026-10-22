@@ -3,6 +3,25 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.12",
+      "date": "2026-10-22",
+      "title": "A clear next step and real card payments",
+      "sections": [
+        {
+          "heading": "Room",
+          "added": [
+            "The room shows one next step, such as accept, pay, or confirm, and a paused trade no longer offers Open a dispute again."
+          ]
+        },
+        {
+          "heading": "Payments",
+          "added": [
+            "Pay opens a Stripe card authorization. TradeSafe does not hold the money, and new trades are not demo simulations."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.11",
       "date": "2026-10-22",
       "title": "Simpler create and trade room",

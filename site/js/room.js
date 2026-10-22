@@ -1,5 +1,6 @@
 import { api, ensureGuest } from "./api-client.js";
 import { money, statusLabel } from "./format.js";
+import { nextStep } from "./room-actions.js";
 
 const ANON_AVATAR = `<span class="avatar anon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="3.2" fill="currentColor"/><path d="M5.2 19.2c1.1-3 3.6-4.5 6.8-4.5s5.7 1.5 6.8 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>`;
 
@@ -46,40 +47,14 @@ function meAccepted(data, userId) {
   );
 }
 
-function turnLine(tx, role, data, userId) {
-  const st = tx.status;
-  const waiting = "Waiting on the other person.";
-  if (st === "completed") return "This trade is complete.";
-  if (st === "cancelled" || st === "expired") return "This trade is closed.";
-  if (st === "disputed") return "This trade is in dispute.";
-  if (st === "refunded") return "This trade was refunded.";
-  if (st === "awaiting_acceptance") {
-    return meAccepted(data, userId)
-      ? "Waiting for the other person to accept."
-      : "Accept the trade to continue.";
-  }
-  if (st === "awaiting_payment" || st === "payment_pending") {
-    return role === "buyer" ? "Your turn to pay." : waiting;
-  }
-  if (["awaiting_fulfillment", "funds_authorized", "in_fulfillment"].includes(st)) {
-    return role === "seller" ? "Your turn to send it." : waiting;
-  }
-  if (st === "awaiting_confirmation") {
-    return role === "buyer" ? "Your turn to confirm you received it." : waiting;
-  }
-  return statusLabel(st);
-}
-
 function render(data, userId) {
   const tx = data.transaction;
   const myRole = data.myRole;
 
   document.getElementById("title").textContent = tx.title;
   document.getElementById("amount-line").textContent = money(tx.amount_cents, tx.currency);
-  document.getElementById("turn-line").textContent = turnLine(tx, myRole, data, userId);
   document.getElementById("ref").textContent = `Ref ${tx.reference_code}`;
   document.getElementById("status-tag").textContent = statusLabel(tx.status);
-  document.getElementById("demo-tag").classList.toggle("hidden", !tx.is_demo);
 
   const live = !["completed", "cancelled", "expired", "refunded"].includes(
     tx.status,
@@ -148,37 +123,40 @@ function render(data, userId) {
 
 function renderActions(tx, role, data, userId) {
   const box = document.getElementById("actions");
-  const buttons = [];
-  const st = tx.status;
-
-  if (
-    (role === "buyer" || role === "seller") &&
-    st === "awaiting_acceptance" &&
-    !meAccepted(data, userId)
-  ) {
-    buttons.push(btn("Accept", "accept", "btn act-btn"));
-  }
-  if (role === "buyer" && (st === "awaiting_payment" || st === "payment_pending")) {
-    buttons.push(btn(tx.is_demo ? "Pay (demo)" : "Pay", "pay", "btn act-btn"));
-  }
-  if (role === "seller" && ["awaiting_fulfillment", "funds_authorized", "in_fulfillment"].includes(st)) {
-    buttons.push(btn("I'm preparing it", "prepare", "btn act-btn"));
-    buttons.push(btn("I sent it", "track", "btn act-btn"));
-  }
-  if (role === "buyer" && st === "awaiting_confirmation") {
-    buttons.push(btn("I received it", "confirm", "btn act-btn"));
-  }
-  if (!["completed", "cancelled"].includes(st)) {
-    buttons.push(btn("Open a dispute", "dispute", "ghost act-quiet"));
-  }
-
-  box.innerHTML =
-    (tx.is_demo ? `<p class="hint demo-note">Demo trade. These buttons update a simulation, not real money.</p>` : "") +
-    (buttons.join("") || `<p class="hint">Nothing for you to do right now.</p>`);
+  const paidWaiting = new URLSearchParams(location.search).get("paid") === "1";
+  const step = nextStep({
+    status: tx.status,
+    role,
+    accepted: meAccepted(data, userId),
+    paidWaiting,
+  });
+  const track = step.track
+    ? `<label class="field-label" for="track-input">Tracking number or note</label>
+       <input class="field" id="track-input" maxlength="200" placeholder="Tracking number, or how you handed it over">`
+    : "";
+  const button = step.action
+    ? btn(step.action.label, step.action.act, "btn act-btn")
+    : "";
+  box.innerHTML = `
+    <p class="turn-line">${escapeHtml(step.headline)}</p>
+    <p class="hint">${escapeHtml(step.detail)}</p>
+    ${track}
+    ${button}
+    <p id="action-error" class="field-error hidden" role="alert"></p>`;
 
   box.querySelectorAll("[data-act]").forEach((el) => {
     el.onclick = () => runAction(el.dataset.act, tx);
   });
+}
+
+function showActionError(message) {
+  const el = document.getElementById("action-error");
+  if (!el) {
+    alert(message);
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
 }
 
 function btn(label, act, cls = "btn") {
@@ -190,30 +168,26 @@ async function runAction(act, tx) {
     if (act === "accept") {
       await api(`/api/trades/${tx.id}/accept`, { method: "POST", body: "{}" });
     } else if (act === "pay") {
-      await api(`/api/trades/${tx.id}/actions`, {
+      const result = await api(`/api/trades/${tx.id}/actions`, {
         method: "POST",
         body: JSON.stringify({ action: "initiate_payment", payload: {} }),
       });
-      if (tx.is_demo) {
-        await api(`/api/trades/${tx.id}/actions`, {
-          method: "POST",
-          body: JSON.stringify({
-            action: "demo_authorize_payment",
-            payload: {},
-          }),
-        });
+      if (result.url) {
+        location.href = result.url;
+        return;
       }
-    } else if (act === "prepare") {
-      await api(`/api/trades/${tx.id}/actions`, {
-        method: "POST",
-        body: JSON.stringify({ action: "mark_preparing", payload: {} }),
-      });
+      throw new Error("Card payment did not open. Try again.");
     } else if (act === "track") {
+      const note = document.getElementById("track-input")?.value.trim() || "";
+      if (!note) {
+        showActionError("Add a tracking number or a short note first.");
+        return;
+      }
       await api(`/api/trades/${tx.id}/actions`, {
         method: "POST",
         body: JSON.stringify({
           action: "submit_tracking",
-          payload: { tracking_number: "DEMO-TRACK", notes: "Transfer update" },
+          payload: { tracking_number: note, notes: note },
         }),
       });
     } else if (act === "confirm") {
@@ -221,18 +195,10 @@ async function runAction(act, tx) {
         method: "POST",
         body: JSON.stringify({ action: "confirm_delivery", payload: {} }),
       });
-    } else if (act === "dispute") {
-      await api(`/api/trades/${tx.id}/actions`, {
-        method: "POST",
-        body: JSON.stringify({
-          action: "open_dispute",
-          payload: { reason: "Opened from room", details: "" },
-        }),
-      });
     }
     await loadRoom(myActorId);
   } catch (err) {
-    alert(err.message || "Action failed");
+    showActionError(err.message || "That did not work. Try again.");
   }
 }
 
