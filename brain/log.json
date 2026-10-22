@@ -3,6 +3,25 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.21",
+      "date": "2026-10-22",
+      "title": "Auth scripts load under CSP",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Supabase client is served from the site instead of esm.sh, so login and email verify work with the Content-Security-Policy."
+          ]
+        },
+        {
+          "heading": "Security",
+          "added": [
+            "CSP allows Google Fonts style and font hosts used by app CSS."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.20",
       "date": "2026-10-22",
       "title": "Email verify works again under rate limits",
