@@ -1,0 +1,52 @@
+name: GitHub Release
+
+# Whenever master gets a version bump commit, publish GitHub Releases
+# from brain/releases.json so notes appear under the repo Releases tab.
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "package.json"
+      - "brain/releases.json"
+      - "brain/log.json"
+      - ".github/workflows/github-release.yml"
+      - "scripts/publish-github-release.mjs"
+  workflow_dispatch:
+    inputs:
+      all:
+        description: "Publish every version in brain/releases.json"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Render notes from brain log
+        run: node scripts/render-release-notes.mjs
+
+      - name: Publish GitHub Release(s)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
+          GITHUB_RELEASE_TARGET: ${{ github.sha }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.all }}" = "true" ]; then
+            node scripts/publish-github-release.mjs --all
+          else
+            node scripts/publish-github-release.mjs
+          fi

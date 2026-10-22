@@ -45,6 +45,8 @@ import {
   createEmailHandoff,
 } from "./lib/email-handoff.mjs";
 import { platformFeeCents } from "./lib/fees.mjs";
+import { InvalidTransitionError } from "./lib/state-machine.mjs";
+import { advanceTransactionStatus, requireStatus } from "./lib/tx-status.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -972,10 +974,12 @@ async function acceptTerms(userId, tradeId) {
     .filter((p) => p.role === "buyer" || p.role === "seller")
     .every((p) => p.terms_accepted_at && p.status === "joined");
   if (both && room.transaction.status === "awaiting_acceptance") {
-    await getAdmin()
-      .from("ts_transactions")
-      .update({ status: "awaiting_payment" })
-      .eq("id", tradeId);
+    await advanceTransactionStatus(getAdmin(), {
+      id: tradeId,
+      from: "awaiting_acceptance",
+      to: "awaiting_payment",
+      source: "client",
+    }).catch(() => null);
   }
   return { bothAccepted: both };
 }
@@ -1098,10 +1102,6 @@ async function joinInvite(actor, body, req) {
     });
     throw Object.assign(new Error("Invitation expired"), { status: 400 });
   }
-  if (inv.use_count >= inv.max_uses) {
-    throw Object.assign(new Error("Invitation exhausted"), { status: 400 });
-  }
-
   const { data: existing } = await getAdmin()
     .from("ts_participants")
     .select("*")
@@ -1110,6 +1110,23 @@ async function joinInvite(actor, body, req) {
     .maybeSingle();
   if (existing?.status === "joined") {
     return { transactionId: inv.transaction_id, alreadyJoined: true };
+  }
+
+  if (inv.use_count >= inv.max_uses) {
+    throw Object.assign(new Error("Invitation exhausted"), { status: 400 });
+  }
+  // Optimistic lock: only one concurrent redeem increments from this use_count.
+  const { data: consumed, error: consumeError } = await getAdmin()
+    .from("ts_invitations")
+    .update({ use_count: inv.use_count + 1 })
+    .eq("id", inv.id)
+    .eq("use_count", inv.use_count)
+    .is("revoked_at", null)
+    .select("id")
+    .maybeSingle();
+  if (consumeError) throw new Error(consumeError.message);
+  if (!consumed) {
+    throw Object.assign(new Error("Invitation exhausted"), { status: 409 });
   }
 
   const { data: slot } = await getAdmin()
@@ -1141,10 +1158,6 @@ async function joinInvite(actor, body, req) {
       display_name: displayName,
     });
   }
-  await getAdmin()
-    .from("ts_invitations")
-    .update({ use_count: inv.use_count + 1 })
-    .eq("id", inv.id);
   await getAdmin()
     .from("ts_milestones")
     .update({ status: "completed", completed_at: new Date().toISOString() })
@@ -1198,6 +1211,11 @@ async function performAction(userId, tradeId, action, payload, req) {
 
   if (action === "initiate_payment") {
     if (role !== "buyer") throw new Error("Only the buyer can pay");
+    requireStatus(
+      tx.status,
+      ["awaiting_payment", "payment_pending"],
+      "This trade is not waiting for payment.",
+    );
     if (!process.env.STRIPE_SECRET_KEY) {
       const err = new Error("Card payments are not set up on this server yet.");
       err.status = 503;
@@ -1266,10 +1284,14 @@ async function performAction(userId, tradeId, action, payload, req) {
         ...paymentPatch,
       });
     }
-    await getAdmin()
-      .from("ts_transactions")
-      .update({ status: "payment_pending" })
-      .eq("id", tradeId);
+    if (tx.status === "awaiting_payment") {
+      await advanceTransactionStatus(getAdmin(), {
+        id: tradeId,
+        from: "awaiting_payment",
+        to: "payment_pending",
+        source: "client",
+      });
+    }
     await getAdmin()
       .from("ts_milestones")
       .update({
@@ -1319,14 +1341,29 @@ async function performAction(userId, tradeId, action, payload, req) {
 
   if (action === "mark_preparing") {
     if (role !== "seller") throw new Error("Only seller");
+    requireStatus(
+      tx.status,
+      ["awaiting_fulfillment", "funds_authorized"],
+      "This trade is not ready to prepare.",
+    );
+    if (tx.status === "funds_authorized") {
+      await advanceTransactionStatus(getAdmin(), {
+        id: tradeId,
+        from: "funds_authorized",
+        to: "awaiting_fulfillment",
+        source: "system",
+      });
+    }
     await getAdmin()
       .from("ts_fulfillments")
       .update({ status: "preparing" })
       .eq("transaction_id", tradeId);
-    await getAdmin()
-      .from("ts_transactions")
-      .update({ status: "in_fulfillment" })
-      .eq("id", tradeId);
+    await advanceTransactionStatus(getAdmin(), {
+      id: tradeId,
+      from: "awaiting_fulfillment",
+      to: "in_fulfillment",
+      source: "client",
+    });
     await getAdmin()
       .from("ts_milestones")
       .update({
@@ -1341,6 +1378,30 @@ async function performAction(userId, tradeId, action, payload, req) {
 
   if (action === "submit_tracking") {
     if (role !== "seller") throw new Error("Only seller");
+    requireStatus(
+      tx.status,
+      ["awaiting_fulfillment", "funds_authorized", "in_fulfillment"],
+      "This trade is not ready for delivery proof.",
+    );
+    let from = tx.status;
+    if (from === "funds_authorized") {
+      await advanceTransactionStatus(getAdmin(), {
+        id: tradeId,
+        from: "funds_authorized",
+        to: "awaiting_fulfillment",
+        source: "system",
+      });
+      from = "awaiting_fulfillment";
+    }
+    if (from === "awaiting_fulfillment") {
+      await advanceTransactionStatus(getAdmin(), {
+        id: tradeId,
+        from: "awaiting_fulfillment",
+        to: "in_fulfillment",
+        source: "client",
+      });
+      from = "in_fulfillment";
+    }
     const shipMode = payload.ship_mode === "carrier" ? "carrier" : "other";
     const tracking =
       shipMode === "carrier" ? payload.tracking_number || null : null;
@@ -1361,10 +1422,12 @@ async function performAction(userId, tradeId, action, payload, req) {
         ],
       })
       .eq("transaction_id", tradeId);
-    await getAdmin()
-      .from("ts_transactions")
-      .update({ status: "awaiting_confirmation" })
-      .eq("id", tradeId);
+    await advanceTransactionStatus(getAdmin(), {
+      id: tradeId,
+      from: "in_fulfillment",
+      to: "awaiting_confirmation",
+      source: "client",
+    });
     await getAdmin().from("ts_events").insert({
       transaction_id: tradeId,
       actor_id: userId,
@@ -1378,6 +1441,18 @@ async function performAction(userId, tradeId, action, payload, req) {
 
   if (action === "confirm_delivery") {
     if (role !== "buyer") throw new Error("Only the buyer can confirm");
+    requireStatus(
+      tx.status,
+      "awaiting_confirmation",
+      "This trade is not waiting for your confirmation.",
+    );
+    if (room.payment?.status !== "authorized") {
+      const err = new Error(
+        "Stripe has not authorized the card yet. Stay on this page, then confirm again.",
+      );
+      err.status = 409;
+      throw err;
+    }
     const pi = room.payment?.provider_payment_id || "";
     if (!String(pi).startsWith("pi_")) {
       const err = new Error(
@@ -1391,6 +1466,33 @@ async function performAction(userId, tradeId, action, payload, req) {
       err.status = 503;
       throw err;
     }
+    await advanceTransactionStatus(getAdmin(), {
+      id: tradeId,
+      from: "awaiting_confirmation",
+      to: "completion_pending",
+      source: "client",
+    });
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    try {
+      await stripe.paymentIntents.capture(pi);
+    } catch (err) {
+      // Capture failed: roll back off completion_pending so the buyer can retry.
+      // Not a graph edge — recovery only when Stripe rejects the capture.
+      await getAdmin()
+        .from("ts_transactions")
+        .update({ status: "awaiting_confirmation" })
+        .eq("id", tradeId)
+        .eq("status", "completion_pending");
+      throw err;
+    }
+    await applyProviderPaymentUpdateImpl(getAdmin(), {
+      provider_payment_id: pi,
+      status: "captured",
+      source: "provider_api",
+      idempotency_key: `capture_${pi}`,
+      actor_id: userId,
+    });
     await getAdmin()
       .from("ts_fulfillments")
       .update({
@@ -1407,23 +1509,6 @@ async function performAction(userId, tradeId, action, payload, req) {
       })
       .eq("transaction_id", tradeId)
       .eq("key", "buyer_receipt_confirmed");
-    const Stripe = (await import("stripe")).default;
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    await stripe.paymentIntents.capture(pi);
-    await applyProviderPaymentUpdateImpl(getAdmin(), {
-      provider_payment_id: pi,
-      status: "captured",
-      source: "provider_api",
-      idempotency_key: `capture_${pi}`,
-      actor_id: userId,
-    });
-    await getAdmin()
-      .from("ts_transactions")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", tradeId);
     await getAdmin()
       .from("ts_milestones")
       .update({
@@ -1449,6 +1534,22 @@ async function performAction(userId, tradeId, action, payload, req) {
       err.status = 409;
       throw err;
     }
+    requireStatus(
+      tx.status,
+      [
+        "awaiting_acceptance",
+        "awaiting_payment",
+        "payment_pending",
+        "funds_authorized",
+        "awaiting_fulfillment",
+        "in_fulfillment",
+        "awaiting_confirmation",
+        "completion_pending",
+        "completed",
+        "cancellation_requested",
+      ],
+      "This trade cannot open a dispute in its current state.",
+    );
     await getAdmin().from("ts_disputes").insert({
       transaction_id: tradeId,
       opened_by: userId,
@@ -1456,10 +1557,12 @@ async function performAction(userId, tradeId, action, payload, req) {
       details: payload.details || "",
       status: "open",
     });
-    await getAdmin()
-      .from("ts_transactions")
-      .update({ status: "disputed" })
-      .eq("id", tradeId);
+    await advanceTransactionStatus(getAdmin(), {
+      id: tradeId,
+      from: tx.status,
+      to: "disputed",
+      source: "client",
+    });
     await getAdmin().from("ts_events").insert({
       transaction_id: tradeId,
       actor_id: userId,

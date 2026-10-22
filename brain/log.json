@@ -3,6 +3,36 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.18",
+      "date": "2026-10-22",
+      "title": "Enforce trade status gates and signed payment webhooks",
+      "sections": [
+        {
+          "heading": "API",
+          "added": [
+            "Room actions advance status only through the shared state machine with conditional updates.",
+            "Buyer confirm moves to completion_pending, captures with Stripe, then completes — and rolls back if capture fails."
+          ]
+        },
+        {
+          "heading": "Security",
+          "added": [
+            "Payment webhooks require a configured secret and a valid signature; unsigned bodies are rejected.",
+            "Webhook and capture updates use durable ts_webhook_events idempotency instead of in-memory keys."
+          ],
+          "fixes": [
+            "Invitation redeem increments use_count with an optimistic lock so concurrent joins cannot over-consume."
+          ]
+        },
+        {
+          "heading": "Payments",
+          "added": [
+            "Authorize and capture paths advance payment_pending → funds_authorized → awaiting_fulfillment and completion_pending → completed only from trusted provider sources."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.17",
       "date": "2026-10-22",
       "title": "Create wizard polish, category fields, and seller-net fees",

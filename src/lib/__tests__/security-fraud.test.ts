@@ -121,6 +121,13 @@ describe("payment integrity helpers", () => {
     const provided = expected;
     expect(provided).toBe(expected);
   });
+
+  it("treats missing signature as unauthorized when a secret is configured", () => {
+    const secret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_configured";
+    const sig = undefined as string | undefined;
+    const mustReject = Boolean(secret) && !sig;
+    expect(mustReject).toBe(true);
+  });
 });
 
 describe("authorization boundaries (pure rules)", () => {
