@@ -8,7 +8,7 @@
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/css/app.css?v=20261022j">
+  <link rel="stylesheet" href="/css/app.css?v=20261022n">
 </head>
 <body class="app" data-page="create">
   <a class="skip" href="#content">Skip to content</a>
@@ -16,8 +16,23 @@
   <main id="content">
     <div class="panel create-card" id="account-gate">
       <h1 id="account-title">Create an account</h1>
-      <p class="note" id="account-note">No account on this device yet — we will create one when you open the email link.</p>
+      <p class="note" id="account-note">New here? Sign up with email. Already have an account? Switch to Log in.</p>
       <form id="account-form" class="form-stack">
+        <div
+          class="choice choice-segment auth-mode-segment"
+          id="account-mode"
+          data-mode="signup"
+          role="tablist"
+          aria-label="Sign up or log in"
+        >
+          <span class="choice-thumb" aria-hidden="true"></span>
+          <button type="button" role="tab" data-mode="signup" class="on" aria-selected="true" id="account-mode-signup">
+            Sign up
+          </button>
+          <button type="button" role="tab" data-mode="login" aria-selected="false" id="account-mode-login">
+            Log in
+          </button>
+        </div>
         <div>
           <label class="field-label" for="account-email">Email</label>
           <input class="field" id="account-email" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com" required>
@@ -186,6 +201,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome({ active: "Create a trade" });
   </script>
-  <script type="module" src="/js/create.js?v=20261022m"></script>
+  <script type="module" src="/js/create.js?v=20261022n"></script>
 </body>
 </html>

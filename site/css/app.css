@@ -708,8 +708,12 @@ form .choice button {
   transition: transform 0.2s ease;
   pointer-events: none;
 }
-.choice-segment[data-role="buyer"] .choice-thumb {
+.choice-segment[data-role="buyer"] .choice-thumb,
+.auth-mode-segment[data-mode="login"] .choice-thumb {
   transform: translateX(100%);
+}
+.auth-mode-segment {
+  margin-bottom: 2px;
 }
 .choice-segment button {
   position: relative;

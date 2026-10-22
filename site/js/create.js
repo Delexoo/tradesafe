@@ -10,7 +10,7 @@ import {
   readEmailHandoffStored,
   rememberEmailAccount,
   resumeEmailHandoff,
-  sendEmailLinkAuto,
+  sendEmailLinkForMode,
 } from "./email-handoff.js";
 import { emailProblem } from "./auth-email.js";
 
@@ -36,15 +36,15 @@ const policyGate = wirePolicyGate(
 enhanceSelects(form);
 
 function syncRoleThumb() {
-  const group = document.querySelector(".choice-segment");
+  const group = document.querySelector("#create-form .choice-segment");
   if (!group) return;
   group.dataset.role = roleInput.value;
 }
 
-document.querySelectorAll("[data-role]").forEach((btn) => {
+document.querySelectorAll("#create-form [data-role]").forEach((btn) => {
   btn.addEventListener("click", () => {
     roleInput.value = btn.dataset.role;
-    document.querySelectorAll("[data-role]").forEach((el) => {
+    document.querySelectorAll("#create-form [data-role]").forEach((el) => {
       const on = el === btn;
       el.classList.toggle("on", on);
       el.setAttribute("aria-pressed", String(on));
@@ -414,18 +414,32 @@ function openWizard(session) {
   showStep();
 }
 
-function paintAccountGate(email = "") {
-  const known = accountDetectedForEmail(email);
+let accountMode = "signup";
+
+function setAccountMode(mode, { paint = true } = {}) {
+  accountMode = mode === "login" ? "login" : "signup";
+  const group = document.getElementById("account-mode");
+  if (group) group.dataset.mode = accountMode;
+  for (const btn of group?.querySelectorAll("[data-mode]") || []) {
+    const on = btn.getAttribute("data-mode") === accountMode;
+    btn.classList.toggle("on", on);
+    btn.setAttribute("aria-selected", on ? "true" : "false");
+  }
+  if (paint) paintAccountGate();
+}
+
+function paintAccountGate() {
   const title = document.getElementById("account-title");
   const note = document.getElementById("account-note");
   const submit = document.getElementById("account-submit");
-  if (title) title.textContent = known ? "Log in" : "Create an account";
+  const login = accountMode === "login";
+  if (title) title.textContent = login ? "Log in" : "Create an account";
   if (note) {
-    note.textContent = known
-      ? "Welcome back. Email a link to continue creating this trade."
-      : "No account on this device yet — we will create one when you open the email link.";
+    note.textContent = login
+      ? "Welcome back. Email a login link to continue creating this trade."
+      : "New here? Sign up with email. Already have an account? Switch to Log in.";
   }
-  if (submit) submit.textContent = known ? "Email me a login link" : "Email me a signup link";
+  if (submit) submit.textContent = login ? "Email me a login link" : "Email me a signup link";
 }
 
 function showAccountGate() {
@@ -434,7 +448,8 @@ function showAccountGate() {
   gate.removeAttribute("hidden");
   document.getElementById("account-checking")?.remove();
   accountForm?.classList.remove("hidden");
-  paintAccountGate(accountEmail?.value || "");
+  const email = accountEmail?.value || "";
+  setAccountMode(accountDetectedForEmail(email) ? "login" : "signup");
   const pending = readEmailHandoffStored();
   if (pending?.nextPath === "/create.html" && accountStatus) {
     accountStatus.textContent =
@@ -464,10 +479,20 @@ const accountForm = document.getElementById("account-form");
 const accountEmail = document.getElementById("account-email");
 const accountError = document.getElementById("account-error");
 const accountStatus = document.getElementById("account-status");
+const accountModeGroup = document.getElementById("account-mode");
+
+accountModeGroup?.addEventListener("click", (event) => {
+  const btn = event.target.closest("[data-mode]");
+  if (!btn || !accountModeGroup.contains(btn)) return;
+  accountError?.classList.add("hidden");
+  accountStatus?.classList.add("hidden");
+  setAccountMode(btn.getAttribute("data-mode"));
+});
+
 accountEmail?.addEventListener("input", () => {
   accountError.classList.add("hidden");
-  paintAccountGate(accountEmail.value);
 });
+
 accountForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = accountEmail.value.trim();
@@ -480,15 +505,25 @@ accountForm.addEventListener("submit", async (event) => {
     accountEmail.focus();
     return;
   }
-  paintAccountGate(email);
+  paintAccountGate();
   const button = document.getElementById("account-submit");
   button.disabled = true;
   try {
-    const { whenSignedIn } = await sendEmailLinkAuto({
+    const { whenSignedIn, mode, switched } = await sendEmailLinkForMode({
       email,
       nextPath: "/create.html",
+      mode: accountMode,
     });
-    accountStatus.textContent = "Check your email. This page signs you in when you open the link.";
+    if (switched && mode === "login") {
+      setAccountMode("login");
+      accountStatus.textContent =
+        "That email already has an account. We sent a login link instead.";
+    } else {
+      accountStatus.textContent =
+        accountMode === "login"
+          ? "Check your email. Open the login link to continue this trade."
+          : "Check your email. Open the signup link to create your account and continue.";
+    }
     accountStatus.classList.remove("hidden");
     button.disabled = false;
     const session = await whenSignedIn;
@@ -502,6 +537,9 @@ accountForm.addEventListener("submit", async (event) => {
     accountError.classList.remove("hidden");
   } catch (err) {
     accountStatus.classList.add("hidden");
+    if (err?.code === "NO_ACCOUNT") {
+      setAccountMode("signup");
+    }
     accountError.textContent = err.message || "Could not send the email.";
     accountError.classList.remove("hidden");
   } finally {

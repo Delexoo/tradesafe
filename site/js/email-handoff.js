@@ -150,23 +150,33 @@ export async function sendEmailLink({ email, shouldCreateUser, nextPath }) {
 }
 
 /**
- * Login when this browser knows the email; otherwise sign up.
- * Always allow create on the OTP call so existing and new accounts both get a link.
- * Falls back the other way if Supabase rejects the first attempt.
+ * Send a magic link for an explicit Sign up or Log in choice.
+ * Login refuses unknown emails; signup creates the user when needed.
  */
-export async function sendEmailLinkAuto({ email, nextPath }) {
-  const known = accountDetectedForEmail(email);
-  const mode = known ? "login" : "signup";
+export async function sendEmailLinkForMode({ email, nextPath, mode = "signup" }) {
+  const wantSignup = mode !== "login";
   try {
-    // shouldCreateUser:true works for both new and returning users.
     const result = await sendEmailLink({
       email,
-      shouldCreateUser: true,
+      shouldCreateUser: wantSignup,
       nextPath,
     });
-    return { ...result, mode };
+    return { ...result, mode: wantSignup ? "signup" : "login" };
   } catch (err) {
-    if (noAccountError(err)) {
+    if (!wantSignup && noAccountError(err)) {
+      const error = new Error("No account for that email. Switch to Sign up.");
+      error.code = "NO_ACCOUNT";
+      throw error;
+    }
+    if (wantSignup && /already|registered|exists/i.test(String(err?.message || ""))) {
+      const result = await sendEmailLink({
+        email,
+        shouldCreateUser: false,
+        nextPath,
+      });
+      return { ...result, mode: "login", switched: true };
+    }
+    if (wantSignup && noAccountError(err)) {
       const result = await sendEmailLink({
         email,
         shouldCreateUser: true,
@@ -174,16 +184,21 @@ export async function sendEmailLinkAuto({ email, nextPath }) {
       });
       return { ...result, mode: "signup" };
     }
-    if (/already|registered|exists|signups not allowed/i.test(String(err?.message || ""))) {
-      const result = await sendEmailLink({
-        email,
-        shouldCreateUser: false,
-        nextPath,
-      });
-      return { ...result, mode: "login" };
-    }
     throw err;
   }
+}
+
+/**
+ * Login when this browser knows the email; otherwise sign up.
+ * Prefer sendEmailLinkForMode when the UI has an explicit Sign up / Log in control.
+ */
+export async function sendEmailLinkAuto({ email, nextPath }) {
+  const known = accountDetectedForEmail(email);
+  return sendEmailLinkForMode({
+    email,
+    nextPath,
+    mode: known ? "login" : "signup",
+  });
 }
 
 /** Continue a sign-in that this tab already requested. */
