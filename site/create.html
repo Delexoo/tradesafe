@@ -89,6 +89,13 @@
         </section>
         <section data-pane="3" class="form-stack hidden">
           <div class="inset" id="review"></div>
+          <div>
+            <label class="field-label" for="display-name">Your display name</label>
+            <input class="field" id="display-name" maxlength="80" required placeholder="How you’ll appear in this trade">
+            <p class="hint">Temporary guest name — not a login. You can create trades without an account.</p>
+          </div>
+          <div id="policy-box"></div>
+          <p class="hint">Accepting these policies does <strong>not</strong> accept the other party’s commercial terms. Each participant must still accept the specific trade terms in the room.</p>
         </section>
         <p id="error" class="field-error hidden" role="alert"></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap">

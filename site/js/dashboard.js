@@ -1,4 +1,4 @@
-import { requireUser, api } from "./supabase.js";
+import { api, ensureGuest } from "./api-client.js";
 import { renderAppNav } from "./nav.js";
 import { money, statusLabel } from "./format.js";
 
@@ -9,7 +9,7 @@ const listEl = document.getElementById("list");
 const emptyEl = document.getElementById("empty");
 
 try {
-  await requireUser();
+  await ensureGuest();
   const { trades } = await api("/api/trades");
   statusEl.classList.add("hidden");
   const items = trades || [];

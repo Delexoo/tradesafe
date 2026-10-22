@@ -8,6 +8,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import {
+  resolveActor,
+  ensureGuestActor,
+  getActivePolicies,
+  recordPlatformPolicyAcceptance,
+  hashToken as hashGuestToken,
+} from "./lib/guest-auth.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -53,6 +60,7 @@ const MIME = {
 };
 
 async function appHandler(req, res) {
+  req._pendingCookies = [];
   try {
     const host = req.headers.host || "localhost";
     const proto = req.headers["x-forwarded-proto"] || "http";
@@ -64,7 +72,7 @@ async function appHandler(req, res) {
     await serveStatic(res, url.pathname);
   } catch (err) {
     console.error(err);
-    json(res, 500, { error: err.message || "Server error" });
+    json(res, err.status || 500, { error: err.message || "Server error" }, req);
   }
 }
 
@@ -134,65 +142,128 @@ async function handleApi(req, res, url) {
   const p = url.pathname;
 
   if (p === "/api/config" && req.method === "GET") {
-    json(res, 200, {
-      supabaseUrl: SUPABASE_URL,
-      supabaseAnonKey: ANON,
-      demoMode: DEMO_MODE,
-      paymentProvider: PAYMENT_PROVIDER,
-      appUrl: process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`,
-    });
+    json(
+      res,
+      200,
+      {
+        supabaseUrl: SUPABASE_URL,
+        supabaseAnonKey: ANON,
+        demoMode: DEMO_MODE,
+        paymentProvider: PAYMENT_PROVIDER,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`,
+        guestMode: true,
+      },
+      req,
+    );
     return;
   }
 
-  const user = await userFromAuth(req);
-  if (!user && p !== "/api/payments/webhook") {
-    json(res, 401, { error: "Unauthorized" });
+  if (p === "/api/policies" && req.method === "GET") {
+    const policies = await getActivePolicies(getAdmin());
+    json(res, 200, { policies }, req);
+    return;
+  }
+
+  if (p === "/api/invitations/preview" && req.method === "GET") {
+    const token = url.searchParams.get("token") || "";
+    json(res, 200, await previewInvite(token), req);
+    return;
+  }
+
+  if (p === "/api/guest/session" && req.method === "POST") {
+    const body = await readJson(req);
+    const actor = await ensureGuestActor(
+      req,
+      getAdmin(),
+      body.display_name,
+      req._pendingCookies,
+    );
+    json(
+      res,
+      200,
+      {
+        actor: {
+          id: actor.id,
+          display_name: actor.display_name,
+          is_guest: actor.is_guest,
+        },
+      },
+      req,
+    );
+    return;
+  }
+
+  let actor = await resolveActor(req, getAdmin());
+
+  // Guest-capable routes: ensure session when missing
+  const guestRoutes =
+    (p === "/api/trades" && req.method === "POST") ||
+    (p === "/api/invitations/join" && req.method === "POST");
+
+  if (!actor && guestRoutes) {
+    const bodyPeek = await readJson(req);
+    req._body = bodyPeek;
+    actor = await ensureGuestActor(
+      req,
+      getAdmin(),
+      bodyPeek.display_name,
+      req._pendingCookies,
+    );
+  }
+
+  if (!actor && p !== "/api/payments/webhook") {
+    json(res, 401, { error: "Unauthorized" }, req);
     return;
   }
 
   if (p === "/api/profile" && req.method === "GET") {
-    await ensureProfile(user);
-    const { data } = await admin
+    await ensureProfile(actor);
+    const { data } = await getAdmin()
       .from("ts_profiles")
       .select("*")
-      .eq("id", user.id)
+      .eq("id", actor.id)
       .single();
-    json(res, 200, { profile: data, email: user.email });
+    json(res, 200, { profile: data, email: actor.email || null, is_guest: !!actor.is_guest }, req);
     return;
   }
 
   if (p === "/api/profile" && req.method === "PATCH") {
     const body = await readJson(req);
-    const { data, error } = await admin
+    const { data, error } = await getAdmin()
       .from("ts_profiles")
-      .update({ display_name: body.display_name })
-      .eq("id", user.id)
+      .update({ display_name: String(body.display_name || "").slice(0, 80) })
+      .eq("id", actor.id)
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    json(res, 200, { profile: data });
+    json(res, 200, { profile: data }, req);
     return;
   }
 
   if (p === "/api/trades" && req.method === "GET") {
-    const { data: parts } = await admin
+    const { data: parts } = await getAdmin()
       .from("ts_participants")
       .select("role, status, ts_transactions(*)")
-      .eq("user_id", user.id)
+      .eq("user_id", actor.id)
       .eq("status", "joined");
-    json(res, 200, {
-      trades: (parts || []).map((p) => ({
-        role: p.role,
-        transaction: p.ts_transactions,
-      })),
-    });
+    json(
+      res,
+      200,
+      {
+        trades: (parts || []).map((row) => ({
+          role: row.role,
+          transaction: row.ts_transactions,
+        })),
+      },
+      req,
+    );
     return;
   }
 
   if (p === "/api/trades" && req.method === "POST") {
-    const body = await readJson(req);
-    const result = await createTrade(user, body);
-    json(res, 201, result);
+    const body = req._body || (await readJson(req));
+    const result = await createTrade(actor, body, req);
+    json(res, 201, result, req);
     return;
   }
 
@@ -202,50 +273,62 @@ async function handleApi(req, res, url) {
     const rest = tradeMatch[2] || "";
 
     if (rest === "" && req.method === "GET") {
-      const room = await getRoom(user.id, tradeId);
-      json(res, 200, room);
+      const room = await getRoom(actor.id, tradeId);
+      json(res, 200, room, req);
       return;
     }
     if (rest === "/accept" && req.method === "POST") {
-      json(res, 200, await acceptTerms(user.id, tradeId));
+      json(res, 200, await acceptTerms(actor.id, tradeId), req);
       return;
     }
     if (rest === "/actions" && req.method === "POST") {
       const body = await readJson(req);
-      json(res, 200, await performAction(user.id, tradeId, body.action, body.payload || {}));
+      json(
+        res,
+        200,
+        await performAction(actor.id, tradeId, body.action, body.payload || {}),
+        req,
+      );
       return;
     }
     if (rest === "/messages" && req.method === "POST") {
       const body = await readJson(req);
-      const room = await getRoom(user.id, tradeId);
-      void room;
-      const { data, error } = await admin
+      await getRoom(actor.id, tradeId);
+      const { data, error } = await getAdmin()
         .from("ts_messages")
         .insert({
           transaction_id: tradeId,
-          sender_id: user.id,
+          sender_id: actor.id,
           body: String(body.body || "").slice(0, 4000),
           is_system: false,
         })
         .select("*")
         .single();
       if (error) throw new Error(error.message);
-      json(res, 201, { message: data });
+      json(res, 201, { message: data }, req);
       return;
     }
   }
 
   if (p === "/api/invitations/join" && req.method === "POST") {
-    const body = await readJson(req);
-    json(res, 200, await joinInvite(user.id, body.token));
+    const body = req._body || (await readJson(req));
+    if (body.display_name) {
+      actor = await ensureGuestActor(
+        req,
+        getAdmin(),
+        body.display_name,
+        req._pendingCookies,
+      );
+    }
+    json(res, 200, await joinInvite(actor, body), req);
     return;
   }
 
   if (p === "/api/invitations/create" && req.method === "POST") {
     const body = await readJson(req);
-    const room = await getRoom(user.id, body.transactionId);
-    if (room.transaction.creator_id !== user.id) {
-      json(res, 403, { error: "Only creator can mint invites" });
+    const room = await getRoom(actor.id, body.transactionId);
+    if (room.transaction.creator_id !== actor.id) {
+      json(res, 403, { error: "Only creator can mint invites" }, req);
       return;
     }
     const raw = randomBytes(32).toString("base64url");
@@ -253,62 +336,73 @@ async function handleApi(req, res, url) {
       transaction_id: body.transactionId,
       token_hash: hashToken(raw),
       role: body.role || "buyer",
-      created_by: user.id,
+      created_by: actor.id,
       expires_at: new Date(Date.now() + 7 * 864e5).toISOString(),
     });
-    json(res, 201, { token: raw, url: `/join/${raw}` });
+    json(res, 201, { token: raw, url: `/join/${raw}` }, req);
     return;
   }
 
-  json(res, 404, { error: "Not found" });
+  json(res, 404, { error: "Not found" }, req);
 }
 
-async function userFromAuth(req) {
-  const h = req.headers.authorization || "";
-  const token = h.startsWith("Bearer ") ? h.slice(7) : null;
-  if (!token) return null;
-  const { data, error } = await getAdmin().auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
-}
-
-async function ensureProfile(user) {
-  const { data } = await admin
+async function ensureProfile(actor) {
+  const { data } = await getAdmin()
     .from("ts_profiles")
     .select("id")
-    .eq("id", user.id)
+    .eq("id", actor.id)
     .maybeSingle();
   if (!data) {
     await getAdmin().from("ts_profiles").insert({
-      id: user.id,
-      display_name:
-        user.user_metadata?.display_name ||
-        user.email?.split("@")[0] ||
-        "Trader",
+      id: actor.id,
+      display_name: actor.display_name || "Trader",
+      is_guest: !!actor.is_guest,
     });
   }
 }
 
 function hashToken(raw) {
-  return createHash("sha256").update(raw, "utf8").digest("hex");
+  return hashGuestToken(raw);
 }
 
 function refCode() {
   return `TS-${randomBytes(4).toString("hex").toUpperCase()}`;
 }
 
-async function createTrade(user, input) {
-  await ensureProfile(user);
+async function createTrade(actor, input, req) {
+  const displayName = String(
+    input.display_name || actor.display_name || "Guest",
+  )
+    .trim()
+    .slice(0, 80);
+  if (!displayName) {
+    const err = new Error("Display name is required");
+    err.status = 400;
+    throw err;
+  }
+
+  await ensureProfile({ ...actor, display_name: displayName });
+  await getAdmin()
+    .from("ts_profiles")
+    .update({ display_name: displayName })
+    .eq("id", actor.id);
+
+  // Validate + record platform policies before creating the trade (server versions only)
+  await recordPlatformPolicyAcceptance(getAdmin(), actor.id, {
+    acceptedPolicies: input.acceptedPolicies,
+    userAgent: req.headers["user-agent"],
+  });
+
   const isDemo = DEMO_MODE || PAYMENT_PROVIDER !== "stripe";
   const creatorRole = input.creator_role === "buyer" ? "buyer" : "seller";
   const other = creatorRole === "buyer" ? "seller" : "buyer";
   const termsBody = {
     deliveryMethod: input.delivery_method || "other",
     ...(input.terms || {}),
-    acknowledgments: true,
+    honestyAck: true,
   };
 
-  const { data: tx, error } = await admin
+  const { data: tx, error } = await getAdmin()
     .from("ts_transactions")
     .insert({
       reference_code: refCode(),
@@ -318,7 +412,7 @@ async function createTrade(user, input) {
       amount_cents: input.amount_cents,
       currency: (input.currency || "usd").toLowerCase(),
       status: "awaiting_acceptance",
-      creator_id: user.id,
+      creator_id: actor.id,
       delivery_method: input.delivery_method || "other",
       terms: termsBody,
       terms_version: 1,
@@ -331,12 +425,11 @@ async function createTrade(user, input) {
   await getAdmin().from("ts_participants").insert([
     {
       transaction_id: tx.id,
-      user_id: user.id,
+      user_id: actor.id,
       role: creatorRole,
       status: "joined",
       joined_at: new Date().toISOString(),
-      display_name:
-        user.user_metadata?.display_name || user.email?.split("@")[0],
+      display_name: displayName,
     },
     { transaction_id: tx.id, user_id: null, role: other, status: "pending" },
   ]);
@@ -345,7 +438,7 @@ async function createTrade(user, input) {
     transaction_id: tx.id,
     version: 1,
     body: termsBody,
-    created_by: user.id,
+    created_by: actor.id,
   });
 
   const milestones = defaultMilestones(input.category || "other");
@@ -369,14 +462,14 @@ async function createTrade(user, input) {
     transaction_id: tx.id,
     token_hash: hashToken(raw),
     role: other,
-    created_by: user.id,
+    created_by: actor.id,
     expires_at: new Date(Date.now() + 7 * 864e5).toISOString(),
     max_uses: 10,
   });
 
   await getAdmin().from("ts_events").insert({
     transaction_id: tx.id,
-    actor_id: user.id,
+    actor_id: actor.id,
     event_type: "transaction_created",
     summary: `Trade ${tx.reference_code} created${isDemo ? " (DEMO)" : ""}`,
     verification_source: "system",
@@ -413,14 +506,14 @@ function defaultMilestones(category) {
 }
 
 async function getRoom(userId, tradeId) {
-  const { data: tx } = await admin
+  const { data: tx } = await getAdmin()
     .from("ts_transactions")
     .select("*")
     .eq("id", tradeId)
     .single();
   if (!tx) throw new Error("Transaction not found");
 
-  const { data: participant } = await admin
+  const { data: participant } = await getAdmin()
     .from("ts_participants")
     .select("*")
     .eq("transaction_id", tradeId)
@@ -464,7 +557,7 @@ async function acceptTerms(userId, tradeId) {
   const room = await getRoom(userId, tradeId);
   const me = room.participants.find((p) => p.user_id === userId);
   if (!me) throw new Error("Not a participant");
-  await admin
+  await getAdmin()
     .from("ts_participants")
     .update({
       terms_accepted_at: new Date().toISOString(),
@@ -473,7 +566,7 @@ async function acceptTerms(userId, tradeId) {
     .eq("id", me.id);
   const key =
     me.role === "buyer" ? "buyer_terms_accepted" : "seller_terms_accepted";
-  await admin
+  await getAdmin()
     .from("ts_milestones")
     .update({
       status: "completed",
@@ -489,7 +582,7 @@ async function acceptTerms(userId, tradeId) {
     summary: `${me.role} accepted terms`,
     verification_source: "user_reported",
   });
-  const { data: refreshed } = await admin
+  const { data: refreshed } = await getAdmin()
     .from("ts_participants")
     .select("*")
     .eq("transaction_id", tradeId)
@@ -498,7 +591,7 @@ async function acceptTerms(userId, tradeId) {
     .filter((p) => p.role === "buyer" || p.role === "seller")
     .every((p) => p.terms_accepted_at && p.status === "joined");
   if (both && room.transaction.status === "awaiting_acceptance") {
-    await admin
+    await getAdmin()
       .from("ts_transactions")
       .update({ status: "awaiting_payment" })
       .eq("id", tradeId);
@@ -506,9 +599,69 @@ async function acceptTerms(userId, tradeId) {
   return { bothAccepted: both };
 }
 
-async function joinInvite(userId, token) {
-  await ensureProfile({ id: userId });
-  const { data: inv } = await admin
+async function previewInvite(token) {
+  if (!token || token.length < 16) throw new Error("Invalid invitation");
+  const { data: inv } = await getAdmin()
+    .from("ts_invitations")
+    .select("role, expires_at, revoked_at, use_count, max_uses, transaction_id")
+    .eq("token_hash", hashToken(token))
+    .maybeSingle();
+  if (!inv) throw new Error("Invalid invitation");
+  if (inv.revoked_at) throw new Error("Invitation revoked");
+  if (new Date(inv.expires_at) < new Date()) throw new Error("Invitation expired");
+  if (inv.use_count >= inv.max_uses) throw new Error("Invitation exhausted");
+  const { data: tx } = await getAdmin()
+    .from("ts_transactions")
+    .select(
+      "id, reference_code, title, description, amount_cents, currency, category, delivery_method, status, is_demo, terms_version",
+    )
+    .eq("id", inv.transaction_id)
+    .single();
+  if (!tx) throw new Error("Invalid invitation");
+  return {
+    role: inv.role,
+    expires_at: inv.expires_at,
+    transaction: {
+      id: tx.id,
+      reference_code: tx.reference_code,
+      title: tx.title,
+      description: tx.description,
+      amount_cents: tx.amount_cents,
+      currency: tx.currency,
+      category: tx.category,
+      delivery_method: tx.delivery_method,
+      status: tx.status,
+      is_demo: tx.is_demo,
+      terms_version: tx.terms_version,
+    },
+  };
+}
+
+async function joinInvite(actor, body) {
+  const token = body.token;
+  const displayName = String(body.display_name || actor.display_name || "Guest")
+    .trim()
+    .slice(0, 80);
+  if (!displayName) {
+    const err = new Error("Display name is required");
+    err.status = 400;
+    throw err;
+  }
+  if (body.acceptedPolicies !== true) {
+    const err = new Error(
+      "You must accept the Terms of Service, Privacy Policy, and Transaction and Dispute Policies.",
+    );
+    err.status = 400;
+    throw err;
+  }
+
+  await ensureProfile({ ...actor, display_name: displayName });
+  await getAdmin()
+    .from("ts_profiles")
+    .update({ display_name: displayName })
+    .eq("id", actor.id);
+
+  const { data: inv } = await getAdmin()
     .from("ts_invitations")
     .select("*")
     .eq("token_hash", hashToken(token))
@@ -518,55 +671,63 @@ async function joinInvite(userId, token) {
   if (new Date(inv.expires_at) < new Date()) throw new Error("Invitation expired");
   if (inv.use_count >= inv.max_uses) throw new Error("Invitation exhausted");
 
-  const { data: existing } = await admin
+  const { data: existing } = await getAdmin()
     .from("ts_participants")
     .select("*")
     .eq("transaction_id", inv.transaction_id)
-    .eq("user_id", userId)
+    .eq("user_id", actor.id)
     .maybeSingle();
   if (existing?.status === "joined") {
     return { transactionId: inv.transaction_id, alreadyJoined: true };
   }
 
-  const { data: slot } = await admin
+  await recordPlatformPolicyAcceptance(getAdmin(), actor.id, {
+    acceptedPolicies: true,
+    transactionId: inv.transaction_id,
+    userAgent: null,
+  });
+
+  const { data: slot } = await getAdmin()
     .from("ts_participants")
     .select("*")
     .eq("transaction_id", inv.transaction_id)
     .eq("role", inv.role)
     .maybeSingle();
-  if (slot?.user_id && slot.user_id !== userId) {
+  if (slot?.user_id && slot.user_id !== actor.id) {
     throw new Error("Role already filled");
   }
   if (slot) {
-    await admin
+    await getAdmin()
       .from("ts_participants")
       .update({
-        user_id: userId,
+        user_id: actor.id,
         status: "joined",
         joined_at: new Date().toISOString(),
+        display_name: displayName,
       })
       .eq("id", slot.id);
   } else {
     await getAdmin().from("ts_participants").insert({
       transaction_id: inv.transaction_id,
-      user_id: userId,
+      user_id: actor.id,
       role: inv.role,
       status: "joined",
       joined_at: new Date().toISOString(),
+      display_name: displayName,
     });
   }
-  await admin
+  await getAdmin()
     .from("ts_invitations")
     .update({ use_count: inv.use_count + 1 })
     .eq("id", inv.id);
-  await admin
+  await getAdmin()
     .from("ts_milestones")
     .update({ status: "completed", completed_at: new Date().toISOString() })
     .eq("transaction_id", inv.transaction_id)
     .eq("key", "shared_parties_ready");
   await getAdmin().from("ts_events").insert({
     transaction_id: inv.transaction_id,
-    actor_id: userId,
+    actor_id: actor.id,
     event_type: "participant_joined",
     summary: `Participant joined as ${inv.role}`,
     verification_source: "system",
@@ -593,11 +754,11 @@ async function performAction(userId, tradeId, action, payload) {
       currency: tx.currency,
       status: "pending",
     });
-    await admin
+    await getAdmin()
       .from("ts_transactions")
       .update({ status: "payment_pending" })
       .eq("id", tradeId);
-    await admin
+    await getAdmin()
       .from("ts_milestones")
       .update({
         status: "completed",
@@ -621,18 +782,18 @@ async function performAction(userId, tradeId, action, payload) {
     if (role !== "buyer") throw new Error("Only buyer");
     const payment = room.payment;
     if (!payment) throw new Error("Initiate payment first");
-    await admin
+    await getAdmin()
       .from("ts_payments")
       .update({
         status: "authorized",
         authorized_at: new Date().toISOString(),
       })
       .eq("id", payment.id);
-    await admin
+    await getAdmin()
       .from("ts_transactions")
       .update({ status: "awaiting_fulfillment" })
       .eq("id", tradeId);
-    await admin
+    await getAdmin()
       .from("ts_milestones")
       .update({
         status: "completed",
@@ -654,15 +815,15 @@ async function performAction(userId, tradeId, action, payload) {
 
   if (action === "mark_preparing") {
     if (role !== "seller") throw new Error("Only seller");
-    await admin
+    await getAdmin()
       .from("ts_fulfillments")
       .update({ status: "preparing" })
       .eq("transaction_id", tradeId);
-    await admin
+    await getAdmin()
       .from("ts_transactions")
       .update({ status: "in_fulfillment" })
       .eq("id", tradeId);
-    await admin
+    await getAdmin()
       .from("ts_milestones")
       .update({
         status: "completed",
@@ -676,7 +837,7 @@ async function performAction(userId, tradeId, action, payload) {
 
   if (action === "submit_tracking") {
     if (role !== "seller") throw new Error("Only seller");
-    await admin
+    await getAdmin()
       .from("ts_fulfillments")
       .update({
         status: "shipped",
@@ -684,7 +845,7 @@ async function performAction(userId, tradeId, action, payload) {
         seller_notes: payload.notes || null,
       })
       .eq("transaction_id", tradeId);
-    await admin
+    await getAdmin()
       .from("ts_transactions")
       .update({ status: "awaiting_confirmation" })
       .eq("id", tradeId);
@@ -701,14 +862,14 @@ async function performAction(userId, tradeId, action, payload) {
 
   if (action === "confirm_delivery") {
     if (role !== "buyer") throw new Error("Only buyer");
-    await admin
+    await getAdmin()
       .from("ts_fulfillments")
       .update({
         status: "confirmed",
         buyer_confirmed_at: new Date().toISOString(),
       })
       .eq("transaction_id", tradeId);
-    await admin
+    await getAdmin()
       .from("ts_milestones")
       .update({
         status: "completed",
@@ -719,7 +880,7 @@ async function performAction(userId, tradeId, action, payload) {
       .eq("key", "buyer_receipt_confirmed");
     if (isDemo && DEMO_MODE) {
       if (room.payment) {
-        await admin
+        await getAdmin()
           .from("ts_payments")
           .update({
             status: "captured",
@@ -727,14 +888,14 @@ async function performAction(userId, tradeId, action, payload) {
           })
           .eq("id", room.payment.id);
       }
-      await admin
+      await getAdmin()
         .from("ts_transactions")
         .update({
           status: "completed",
           completed_at: new Date().toISOString(),
         })
         .eq("id", tradeId);
-      await admin
+      await getAdmin()
         .from("ts_milestones")
         .update({
           status: "completed",
@@ -751,7 +912,7 @@ async function performAction(userId, tradeId, action, payload) {
         payload: { demo: true },
       });
     } else {
-      await admin
+      await getAdmin()
         .from("ts_transactions")
         .update({ status: "completion_pending" })
         .eq("id", tradeId);
@@ -767,7 +928,7 @@ async function performAction(userId, tradeId, action, payload) {
       details: payload.details || "",
       status: "open",
     });
-    await admin
+    await getAdmin()
       .from("ts_transactions")
       .update({ status: "disputed" })
       .eq("id", tradeId);
@@ -800,12 +961,16 @@ function readJson(req) {
   });
 }
 
-function json(res, status, body) {
+function json(res, status, body, req) {
   const payload = JSON.stringify(body);
-  res.writeHead(status, {
+  const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
-  });
+  };
+  const cookies = req?._pendingCookies || [];
+  if (cookies.length === 1) headers["Set-Cookie"] = cookies[0];
+  else if (cookies.length > 1) headers["Set-Cookie"] = cookies;
+  res.writeHead(status, headers);
   res.end(payload);
 }

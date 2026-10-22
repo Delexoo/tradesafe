@@ -1,4 +1,4 @@
-import { requireUser, api, getSupabase } from "./supabase.js";
+import { api, ensureGuest } from "./api-client.js";
 import { renderAppNav } from "./nav.js";
 import {
   money,
@@ -15,15 +15,19 @@ const id = params.get("id");
 const boot = document.getElementById("boot");
 const roomEl = document.getElementById("room");
 const errEl = document.getElementById("room-error");
+let myActorId = null;
 
 if (!id) {
   boot.classList.add("hidden");
   errEl.classList.remove("hidden");
 } else {
   try {
-    const { user } = await requireUser();
-    await loadRoom(user.id);
-    subscribe(id);
+    await ensureGuest();
+    const profile = await api("/api/profile");
+    myActorId = profile.profile?.id;
+    await loadRoom(myActorId);
+    // Poll for updates (guest-friendly; no Supabase auth required)
+    setInterval(() => loadRoom(myActorId).catch(() => {}), 8000);
   } catch (err) {
     boot.classList.add("hidden");
     document.getElementById("room-error-text").textContent =
@@ -36,7 +40,7 @@ async function loadRoom(userId) {
   const data = await api(`/api/trades/${id}`);
   boot.classList.add("hidden");
   roomEl.classList.remove("hidden");
-  render(data, userId);
+  render(data, userId || myActorId);
 }
 
 function render(data, userId) {
@@ -227,8 +231,7 @@ async function runAction(act, tx) {
         }),
       });
     }
-    const { user } = await requireUser();
-    await loadRoom(user.id);
+    await loadRoom(myActorId);
   } catch (err) {
     alert(err.message || "Action failed");
   }
@@ -245,50 +248,11 @@ document.getElementById("chat-form").addEventListener("submit", async (e) => {
       body: JSON.stringify({ body }),
     });
     input.value = "";
-    const { user } = await requireUser();
-    await loadRoom(user.id);
+    await loadRoom(myActorId);
   } catch (err) {
     alert(err.message || "Could not send");
   }
 });
-
-async function subscribe(tradeId) {
-  try {
-    const sb = await getSupabase();
-    sb.channel(`room-${tradeId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "ts_transactions", filter: `id=eq.${tradeId}` },
-        () => refresh(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "ts_messages", filter: `transaction_id=eq.${tradeId}` },
-        () => refresh(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "ts_events", filter: `transaction_id=eq.${tradeId}` },
-        () => refresh(),
-      )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          document.getElementById("live-dot")?.classList.add("live");
-        }
-      });
-  } catch {
-    /* realtime optional */
-  }
-}
-
-async function refresh() {
-  try {
-    const { user } = await requireUser();
-    await loadRoom(user.id);
-  } catch {
-    /* ignore */
-  }
-}
 
 function escapeHtml(s) {
   return String(s || "")

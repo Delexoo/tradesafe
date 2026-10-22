@@ -548,3 +548,54 @@ body.marketing .footer { border-color: var(--marketing-line); }
   background: var(--receipt-bg);
   color: var(--receipt-ink);
 }
+
+/* Policy acceptance */
+.policy-accept {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--inset);
+  font-size: 14px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.policy-accept input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+.policy-accept a {
+  color: var(--receipt-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 650;
+}
+.policy-required {
+  display: block;
+  margin-top: 6px;
+  font-style: normal;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.policy-page {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.policy-page h1 { font-size: 28px; font-weight: 750; letter-spacing: -0.02em; }
+.policy-page h2 { font-size: 17px; font-weight: 700; margin-top: 1.75rem; }
+.policy-page p, .policy-page li { color: var(--text); font-size: 15px; line-height: 1.55; }
+.policy-page .draft-banner {
+  margin: 16px 0 24px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--amber-bg);
+  color: var(--amber-ink);
+  font-size: 14px;
+  font-weight: 650;
+}

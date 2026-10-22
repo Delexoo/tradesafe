@@ -3,6 +3,41 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.3",
+      "date": "2026-10-22",
+      "title": "Guest-first access with required policy acceptance",
+      "tag": "v0.1.3",
+      "sections": [
+        {
+          "heading": "Auth",
+          "added": [
+            "Ordinary create, join, and room flows no longer require login or registration; secure guest session cookies identify participants."
+          ],
+          "fixes": [
+            "Login and signup links were removed from the primary navigation and homepage CTAs."
+          ]
+        },
+        {
+          "heading": "Wizard",
+          "added": [
+            "Create trade requires an unchecked policy checkbox and display name; the server records policy versions before creating the trade."
+          ]
+        },
+        {
+          "heading": "Join",
+          "added": [
+            "Invite links show a public summary, then require display name and platform policy acceptance before granting room access."
+          ]
+        },
+        {
+          "heading": "Security",
+          "added": [
+            "Append-only ts_policy_acceptances and ts_guest_sessions tables; clients cannot forge policy versions or acceptance timestamps."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.2",
       "date": "2026-10-22",
       "title": "Live Vercel deploy linked from the repo",

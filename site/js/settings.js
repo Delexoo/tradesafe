@@ -1,43 +1,17 @@
-import { requireUser, api, getSupabase } from "./supabase.js";
 import { renderAppNav } from "./nav.js";
+import { api, ensureGuest } from "./api-client.js";
 
-renderAppNav("settings");
+renderAppNav("dashboard");
 
-const { user } = await requireUser();
-const form = document.getElementById("profile-form");
-const errorEl = document.getElementById("error");
-const messageEl = document.getElementById("message");
-
+const status = document.getElementById("status");
 try {
-  const { profile, email } = await api("/api/profile");
-  document.getElementById("display_name").value = profile?.display_name || "";
-  document.getElementById("email").value = email || user.email || "";
-} catch (err) {
-  errorEl.textContent = err.message;
-  errorEl.classList.remove("hidden");
-}
-
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  errorEl.classList.add("hidden");
-  messageEl.classList.add("hidden");
-  try {
-    await api("/api/profile", {
-      method: "PATCH",
-      body: JSON.stringify({
-        display_name: document.getElementById("display_name").value.trim(),
-      }),
-    });
-    messageEl.textContent = "Saved.";
-    messageEl.classList.remove("hidden");
-  } catch (err) {
-    errorEl.textContent = err.message;
-    errorEl.classList.remove("hidden");
+  await ensureGuest();
+  const { profile, is_guest } = await api("/api/profile");
+  if (status) {
+    status.textContent = is_guest
+      ? `Guest session · ${profile?.display_name || "Guest"}`
+      : `Signed in · ${profile?.display_name || ""}`;
   }
-});
-
-document.getElementById("signout").onclick = async () => {
-  const sb = await getSupabase();
-  await sb.auth.signOut();
-  location.href = "/";
-};
+} catch (err) {
+  if (status) status.textContent = err.message || "Could not load settings";
+}
