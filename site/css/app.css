@@ -239,6 +239,62 @@ textarea.field { min-height: 96px; resize: vertical; }
   border-radius: 12px;
   background: var(--inset);
 }
+.confidence-card {
+  margin: 0 0 16px;
+  border: 1px solid var(--app-line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 0;
+}
+.confidence-card > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+.confidence-card > summary::-webkit-details-marker { display: none; }
+.confidence-card > summary::after {
+  content: "Show";
+  justify-self: start;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--app-muted);
+}
+.confidence-card[open] > summary::after { content: "Hide"; }
+.confidence-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.confidence-sub {
+  font-size: 13px;
+  color: var(--app-muted);
+  line-height: 1.35;
+}
+.confidence-body {
+  padding: 0 14px 12px;
+  border-top: 1px solid var(--app-line);
+  padding-top: 10px;
+}
+.confidence-list {
+  margin: 6px 0 0;
+  padding: 0 0 0 1.1rem;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.confidence-list li { margin: 0.2rem 0; }
+.confidence-foot {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--app-muted);
+  line-height: 1.35;
+}
+@media (max-width: 640px) {
+  .confidence-card > summary { padding: 10px 12px; }
+  .confidence-body { padding: 0 12px 10px; padding-top: 10px; }
+}
 .avatar {
   width: 34px;
   height: 34px;

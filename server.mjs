@@ -36,6 +36,7 @@ import {
   handlePaymentWebhook as handlePaymentWebhookImpl,
   applyProviderPaymentUpdate as applyProviderPaymentUpdateImpl,
 } from "./lib/security-handlers.mjs";
+import { getTradeConfidence } from "./lib/trade-confidence.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -413,6 +414,41 @@ async function handleApi(req, res, url) {
           });
         }
         throw err;
+      }
+      return;
+    }
+    if (rest === "/confidence" && req.method === "GET") {
+      try {
+        const confidence = await getTradeConfidence(
+          getAdmin(),
+          actor,
+          tradeId,
+        );
+        // No shared caches — per-viewer authorization-sensitive response
+        res.setHeader(
+          "Cache-Control",
+          "private, no-store, max-age=0, must-revalidate",
+        );
+        json(res, 200, confidence, req);
+      } catch (err) {
+        if (err.code === "TRADE_ACCESS_DENIED" || err.status === 403) {
+          await emitSecurityEvent(getAdmin(), req, actor, {
+            event_type: "unauthorized_trade_access",
+            severity: "high",
+            transaction_id: tradeId,
+            payload: { route: "confidence" },
+          });
+        }
+        const status = err.status || 500;
+        json(
+          res,
+          status,
+          {
+            error: err.message || "Trade Confidence unavailable",
+            code: err.code || "CONFIDENCE_FAILED",
+          },
+          req,
+        );
       }
       return;
     }

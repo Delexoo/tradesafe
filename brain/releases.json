@@ -3,6 +3,39 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.7",
+      "date": "2026-10-22",
+      "title": "Trade Confidence for verified participants",
+      "tag": "v0.1.7",
+      "sections": [
+        {
+          "heading": "API",
+          "added": [
+            "GET /api/trades/:id/confidence returns a minimized Trade Confidence payload only for registered, email-verified joined participants."
+          ]
+        },
+        {
+          "heading": "Room",
+          "added": [
+            "A collapsible Trade Confidence card loads beside participants for eligible accounts, with factual signals and an honest non-guarantee footer."
+          ]
+        },
+        {
+          "heading": "Security",
+          "added": [
+            "Trade Confidence omits guest access, unverified viewers, non-participants, raw device/IP data, and counterparty session-familiarity badges; completed-trade counts exclude demo and non-completed statuses.",
+            "The privacy policy explains what Trade Confidence may show and that it is not a trust score, identity check, or guarantee."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Registered sessions send a Bearer token from the shared API client so email-verified account checks work alongside guest cookies."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.6",
       "date": "2026-10-22",
       "title": "GitHub Releases from brain notes",

@@ -13,6 +13,10 @@ const boot = document.getElementById("boot");
 const roomEl = document.getElementById("room");
 const errEl = document.getElementById("room-error");
 let myActorId = null;
+/** @type {null | object} cached confidence payload for this room load */
+let confidenceCache = null;
+let confidenceFetchInFlight = null;
+let confidenceParticipantsKey = "";
 
 if (!id) {
   boot.classList.add("hidden");
@@ -79,6 +83,19 @@ function render(data, userId) {
       </div>`;
     })
     .join("");
+
+  // Trade Confidence loads separately — never blocks the room and never embeds
+  // signals in the public room payload.
+  const partKey = (data.participants || [])
+    .filter((p) => p.status === "joined" && p.user_id)
+    .map((p) => `${p.role}:${p.user_id}`)
+    .sort()
+    .join("|");
+  if (partKey !== confidenceParticipantsKey) {
+    confidenceParticipantsKey = partKey;
+    confidenceCache = null;
+  }
+  loadTradeConfidence();
 
   const pay = data.payment;
   document.getElementById("payment-card").innerHTML = `
@@ -280,4 +297,96 @@ function escapeHtml(s) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+async function loadTradeConfidence() {
+  const card = document.getElementById("confidence-card");
+  const body = document.getElementById("confidence-body");
+  if (!card || !body || !id) return;
+
+  if (confidenceCache) {
+    renderConfidence(confidenceCache);
+    return;
+  }
+  if (confidenceFetchInFlight) {
+    try {
+      renderConfidence(await confidenceFetchInFlight);
+    } catch {
+      card.classList.add("hidden");
+    }
+    return;
+  }
+
+  confidenceFetchInFlight = api(`/api/trades/${id}/confidence`)
+    .then((data) => {
+      confidenceCache = data;
+      return data;
+    })
+    .finally(() => {
+      confidenceFetchInFlight = null;
+    });
+
+  try {
+    const data = await confidenceFetchInFlight;
+    renderConfidence(data);
+  } catch (err) {
+    // Guests, unverified accounts, and non-participants: hide quietly.
+    // Do not surface confidence errors into the main room.
+    card.classList.add("hidden");
+    confidenceCache = null;
+    if (
+      err?.code !== "CONFIDENCE_GUESTS_EXCLUDED" &&
+      err?.code !== "CONFIDENCE_EMAIL_UNVERIFIED" &&
+      err?.status !== 401 &&
+      err?.status !== 403
+    ) {
+      // Unexpected failures stay silent in the room UI
+    }
+  }
+}
+
+function renderConfidence(data) {
+  const card = document.getElementById("confidence-card");
+  const body = document.getElementById("confidence-body");
+  if (!card || !body) return;
+
+  if (!data?.available) {
+    if (data?.reason === "counterpart_pending") {
+      card.classList.remove("hidden");
+      body.innerHTML = `
+        <p class="hint">Signals appear after the other participant joins this trade.</p>
+        <p class="confidence-foot">${escapeHtml(data.disclaimer || "")}</p>`;
+      return;
+    }
+    card.classList.add("hidden");
+    return;
+  }
+
+  const signals = Array.isArray(data.signals) ? data.signals : [];
+  if (!signals.length) {
+    card.classList.remove("hidden");
+    body.innerHTML = `
+      <p class="hint">No account signals are available for this participant yet.</p>
+      <p class="confidence-foot">${escapeHtml(data.disclaimer || "")}</p>`;
+    return;
+  }
+
+  const role = data.counterpartRole
+    ? `<p class="hint">About the ${escapeHtml(data.counterpartRole)}</p>`
+    : "";
+
+  card.classList.remove("hidden");
+  body.innerHTML = `
+    ${role}
+    <ul class="confidence-list" aria-label="Trade Confidence signals">
+      ${signals
+        .map((s) => {
+          const text = s.value
+            ? `${escapeHtml(s.label)}: ${escapeHtml(s.value)}`
+            : escapeHtml(s.label);
+          return `<li>${text}</li>`;
+        })
+        .join("")}
+    </ul>
+    <p class="confidence-foot">${escapeHtml(data.disclaimer || "")}</p>`;
 }
