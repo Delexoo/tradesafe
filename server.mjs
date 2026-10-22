@@ -39,6 +39,11 @@ import {
 import { getTradeConfidence } from "./lib/trade-confidence.mjs";
 import { accountProblem } from "./lib/account-gate.mjs";
 import { createPayoutLink, readPayout, refreshPayout } from "./lib/payouts.mjs";
+import {
+  claimEmailHandoff,
+  completeEmailHandoff,
+  createEmailHandoff,
+} from "./lib/email-handoff.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -246,6 +251,45 @@ async function handleApi(req, res, url) {
       bodyPeek.display_name,
       req._pendingCookies,
     );
+  }
+
+  if (p === "/api/auth/email-handoff" && req.method === "POST") {
+    try {
+      const body = req._body || (await readJson(req));
+      json(res, 200, await createEmailHandoff(getAdmin(), body), req);
+    } catch (err) {
+      json(res, err.status || 503, { error: err.message, code: "EMAIL_HANDOFF" }, req);
+    }
+    return;
+  }
+
+  if (p === "/api/auth/email-handoff/complete" && req.method === "POST") {
+    try {
+      const body = req._body || (await readJson(req));
+      json(
+        res,
+        200,
+        await completeEmailHandoff(getAdmin(), {
+          id: body.id,
+          accessToken: body.access_token,
+          refreshToken: body.refresh_token,
+        }),
+        req,
+      );
+    } catch (err) {
+      json(res, err.status || 503, { error: err.message, code: "EMAIL_HANDOFF" }, req);
+    }
+    return;
+  }
+
+  if (p === "/api/auth/email-handoff/claim" && req.method === "POST") {
+    try {
+      const body = req._body || (await readJson(req));
+      json(res, 200, await claimEmailHandoff(getAdmin(), body), req);
+    } catch (err) {
+      json(res, err.status || 503, { error: err.message, code: "EMAIL_HANDOFF" }, req);
+    }
+    return;
   }
 
   if (!actor && p !== "/api/payments/webhook") {

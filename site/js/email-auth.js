@@ -1,5 +1,6 @@
 import { getSession, getSupabase } from "./supabase.js";
 import { emailProblem, safeNextPath } from "./email-auth-check.js";
+import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
 
 export { emailProblem, safeNextPath };
 
@@ -80,27 +81,26 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
     }
     const button = form.querySelector(".auth-submit");
     button.disabled = true;
+    const nextPath = safeNextPath(location.search);
     try {
-      const sb = await getSupabase();
-      const { data, error } = await sb.auth.signInWithOtp({
+      showError("");
+      const { whenSignedIn } = await sendEmailLink({
         email,
-        options: {
-          shouldCreateUser: mode === "signup",
-          emailRedirectTo: `${location.origin}${safeNextPath(location.search)}`,
-        },
+        shouldCreateUser: mode === "signup",
+        nextPath,
       });
-      if (error) throw error;
-      if (data?.session) {
-        location.href = safeNextPath(location.search);
+      showStatus("Check your email. This page signs you in when you open the link.");
+      button.disabled = false;
+      const session = await whenSignedIn;
+      if (session?.replaced) return;
+      if (session?.user) {
+        location.href = nextPath;
         return;
       }
-      showError("");
-      showStatus(
-        mode === "signup"
-          ? "Check your email for a link to create your account."
-          : "Check your email for a link to log in.",
-      );
+      showStatus("");
+      showError("That email link expired. Request a new one.");
     } catch (err) {
+      showStatus("");
       const text = err?.message || "Could not send the email.";
       if (mode === "login" && /signups not allowed|user not found|not found/i.test(text)) {
         showError("No account for that email yet. Use Sign up.");
@@ -116,6 +116,10 @@ export function bindEmailAuth(root, { initialMode = "login" } = {}) {
     const sb = await getSupabase();
     await sb.auth.signOut();
     location.reload();
+  });
+
+  resumeEmailHandoff(safeNextPath(location.search)).then((session) => {
+    if (session?.user) location.href = safeNextPath(location.search);
   });
 
   getSession()

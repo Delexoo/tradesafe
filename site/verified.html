@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Signing in · TradeSafe</title>
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="app" data-page="login">
+  <main id="content">
+    <div class="panel create-card">
+      <h1>Signing you in</h1>
+      <p class="note" id="verified-status">The device that asked for this email will sign in too.</p>
+    </div>
+  </main>
+  <script type="module">
+    import { finishEmailHandoff } from "/js/email-handoff.js";
+    import { safeNextPath } from "/js/email-auth-check.js";
+
+    const params = new URLSearchParams(location.search);
+    const status = document.getElementById("verified-status");
+    const next = safeNextPath(location.search);
+    const result = await finishEmailHandoff(params.get("login"));
+    if (result.ok) {
+      location.replace(next);
+    } else if (result.signedInHere) {
+      status.textContent = "This browser is signed in, but the device that asked for the email could not be updated. Request a new link from that device.";
+    } else {
+      status.textContent = "This link could not sign you in. Go back to the device that asked for the email and request a new one.";
+    }
+  </script>
+</body>
+</html>

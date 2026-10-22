@@ -1,7 +1,8 @@
 import { api } from "./api-client.js";
 import { problemsForStep } from "./create-form.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
-import { getSession, getSupabase } from "./supabase.js";
+import { getSession } from "./supabase.js";
+import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
 import { emailProblem } from "./email-auth-check.js";
 
 const STEP_TITLES = ["Name the trade", "Describe it", "Choose your side", "Agree and create"];
@@ -298,21 +299,25 @@ accountForm.addEventListener("submit", async (event) => {
   const button = document.getElementById("account-submit");
   button.disabled = true;
   try {
-    const sb = await getSupabase();
-    const { error } = await sb.auth.signInWithOtp({
+    const { whenSignedIn } = await sendEmailLink({
       email,
-      options: {
-        shouldCreateUser: accountMode === "signup",
-        emailRedirectTo: `${location.origin}/create.html`,
-      },
+      shouldCreateUser: accountMode === "signup",
+      nextPath: "/create.html",
     });
-    if (error) throw error;
-    accountStatus.textContent =
-      accountMode === "signup"
-        ? "Check your email for a link to create your account."
-        : "Check your email for a link to log in.";
+    accountStatus.textContent = "Check your email. This page signs you in when you open the link.";
     accountStatus.classList.remove("hidden");
+    button.disabled = false;
+    const session = await whenSignedIn;
+    if (session?.replaced) return;
+    if (session?.user) {
+      openWizard(session);
+      return;
+    }
+    accountStatus.classList.add("hidden");
+    accountError.textContent = "That email link expired. Request a new one.";
+    accountError.classList.remove("hidden");
   } catch (err) {
+    accountStatus.classList.add("hidden");
     accountError.textContent = err.message || "Could not send the email.";
     accountError.classList.remove("hidden");
   } finally {
@@ -323,3 +328,8 @@ accountForm.addEventListener("submit", async (event) => {
 document.documentElement.dataset.createReady = "1";
 const session = await getSession();
 if (session?.user) openWizard(session);
+else {
+  resumeEmailHandoff("/create.html").then((next) => {
+    if (next?.user) openWizard(next);
+  });
+}

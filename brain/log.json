@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.14",
+      "date": "2026-10-22",
+      "title": "Email sign-in returns to the device that asked",
+      "sections": [
+        {
+          "heading": "Auth",
+          "added": [
+            "Opening the email link signs in the device that requested it, even when the link is opened on another device."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.13",
       "date": "2026-10-22",
       "title": "Account, payout, and a four-step create wizard",
