@@ -1,6 +1,6 @@
 {
   "name": "tradesafe",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "type": "module",
   "description": "TradeSafe â€” browser-only live transaction rooms (vanilla HTML site)",
@@ -8,6 +8,8 @@
     "dev": "node server.mjs",
     "start": "node server.mjs",
     "notes": "node scripts/render-release-notes.mjs",
+    "release:github": "node scripts/publish-github-release.mjs",
+    "release:github:all": "node scripts/publish-github-release.mjs --all",
     "test": "vitest run",
     "test:watch": "vitest"
   },

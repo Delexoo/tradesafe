@@ -3,6 +3,19 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.6",
+      "date": "2026-10-22",
+      "title": "GitHub Releases from brain notes",
+      "sections": [
+        {
+          "heading": "API",
+          "added": [
+            "Pushing a version bump to GitHub publishes a GitHub Release from brain/releases.json (workflow plus npm run release:github) so notes appear under the repo Releases tab."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.5",
       "date": "2026-10-22",
       "title": "Security consent, fraud logging, and admin review",

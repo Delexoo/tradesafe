@@ -18,8 +18,9 @@ The version is one number. If the user did not name the next one, raise the patc
 2. Smoke-check the vanilla site (`npm run dev` / open key HTML pages) when UI changed. Run `npm test` when `src/lib` changed.
 3. Commit source, `site/`, `server.mjs`, brain log, and `brain/releases.json` together. Never commit `.env` or secrets. Prefer `C:\Users\TeamB\MasterVault\middleman` if `D:\` has filesystem errors — keep trees synced.
 4. Commit message from the new version title + `added`/`fixes` (concise, why-focused). Follow git safety rules.
-5. Push only when the user asked to push or deploy.
-6. On **deploy**: publish the site (Vercel static `site/` and/or Node `server.mjs`) with tokens from `.env` without printing them.
-7. Report the version, commit summary, and how to open the site (`npm run dev` → http://localhost:3000).
+5. Push only when the user asked to push, update, or deploy.
+6. After every successful **push** to GitHub, publish the matching GitHub Release so notes appear under the repo **Releases** tab: run `npm run notes` then `npm run release:github` (uses `GITHUB_TOKEN` / `GH_TOKEN` from `.env`; never print the token). The `.github/workflows/github-release.yml` workflow also does this on push to `master`/`main` when `package.json` or brain release files change. Do not skip the local publish when a token is available — the Releases page must show this version.
+7. On **deploy**: publish the site (Vercel static `site/` and/or Node `server.mjs`) with tokens from `.env` without printing them.
+8. Report the version, commit summary, GitHub Release URL (or confirm the workflow/release step), and how to open the site (`npm run dev` → http://localhost:3000).
 
-If the user only asked to commit, do steps 1–4. If they only asked to update the brain log, do not bump or commit.
+If the user only asked to commit, do steps 1–4. If they also asked to update/push/deploy, include push + GitHub Release. If they only asked to update the brain log, do not bump or commit.
