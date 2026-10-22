@@ -16,15 +16,15 @@
   <main id="content">
     <div class="panel create-card" id="account-gate">
       <h1 id="account-title">Create an account</h1>
-      <p class="note" id="account-note">You need an account so Stripe can pay you when the trade is done.</p>
+      <p class="note" id="account-note">No account on this device yet — we will create one when you open the email link.</p>
       <form id="account-form" class="form-stack">
         <div>
           <label class="field-label" for="account-email">Email</label>
-          <input class="field" id="account-email" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com">
+          <input class="field" id="account-email" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com" required>
         </div>
         <p id="account-error" class="field-error hidden" role="alert"></p>
         <p id="account-status" class="hint hidden" role="status"></p>
-        <button class="btn act-btn" id="account-submit" type="submit">Email me a link</button>
+        <button class="btn act-btn" id="account-submit" type="submit">Email me a signup link</button>
       </form>
     </div>
     <div class="panel create-card hidden" id="wizard">
@@ -186,6 +186,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome({ active: "Create a trade" });
   </script>
-  <script type="module" src="/js/create.js?v=20261022k"></script>
+  <script type="module" src="/js/create.js?v=20261022m"></script>
 </body>
 </html>

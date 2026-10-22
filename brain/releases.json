@@ -3,6 +3,21 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.29",
+      "date": "2026-10-22",
+      "title": "Create gate stays usable while waiting on email",
+      "tag": "v0.1.29",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Create a trade shows Log in or Create an account right away instead of hanging on One moment while a pending email link is polled.",
+            "The create account gate copy matches login vs signup and no longer claims Stripe payout wording on that screen."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.28",
       "date": "2026-10-22",
       "title": "Create-trade email verify works on the same device",

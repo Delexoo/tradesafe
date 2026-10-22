@@ -7,6 +7,7 @@ import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
 import { getSupabase, waitForAuthSession } from "./supabase.js";
 import {
   accountDetectedForEmail,
+  readEmailHandoffStored,
   rememberEmailAccount,
   resumeEmailHandoff,
   sendEmailLinkAuto,
@@ -434,6 +435,12 @@ function showAccountGate() {
   document.getElementById("account-checking")?.remove();
   accountForm?.classList.remove("hidden");
   paintAccountGate(accountEmail?.value || "");
+  const pending = readEmailHandoffStored();
+  if (pending?.nextPath === "/create.html" && accountStatus) {
+    accountStatus.textContent =
+      "Check your email. This page signs you in when you open the link.";
+    accountStatus.classList.remove("hidden");
+  }
 }
 
 function showCheckingGate() {
@@ -514,21 +521,26 @@ async function enterIfSignedIn() {
   return false;
 }
 
-try {
-  if (await enterIfSignedIn()) {
-    /* already in the wizard */
-  } else {
-    const handed = await resumeEmailHandoff("/create.html");
-    if (handed?.user) openWizard(handed);
-    else {
-      showAccountGate();
-      const sb = await getSupabase();
-      sb.auth.onAuthStateChange((_event, session) => {
-        if (session?.user) openWizard(session);
-      });
-    }
+async function bootCreateGate() {
+  try {
+    if (await enterIfSignedIn()) return;
+  } catch (err) {
+    console.error(err);
   }
-} catch (err) {
-  console.error(err);
+  // Show login/signup immediately — never block the form on a pending email poll.
   showAccountGate();
+  resumeEmailHandoff("/create.html").then((handed) => {
+    if (handed?.replaced) return;
+    if (handed?.user) openWizard(handed);
+  });
+  try {
+    const sb = await getSupabase();
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) openWizard(session);
+    });
+  } catch (err) {
+    console.error(err);
+  }
 }
+
+bootCreateGate();
