@@ -1,45 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" data-appearance="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sign up · TradeSafe</title>
-  <link rel="stylesheet" href="/css/fonts.css">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body data-page="signup">
+<body class="app" data-page="signup">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav">
-    <a class="brand" href="/">
-      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.2 8.4 7 9 3.8-.6 7-4 7-9V6l-7-3z"/></svg></span>
-      TradeSafe
-    </a>
-  </header>
-  <main id="content" class="shell">
-    <div class="panel narrow">
-      <h1>Create your account</h1>
-      <p class="note">Join TradeSafe to create and join private trades in the browser.</p>
-      <form id="signup-form" class="form-stack">
-        <div>
-          <label class="field-label" for="display_name">Display name</label>
-          <input class="field" id="display_name" name="display_name" type="text" autocomplete="nickname" required>
-        </div>
-        <div>
-          <label class="field-label" for="email">Email</label>
-          <input class="field" id="email" name="email" type="email" autocomplete="email" required>
-        </div>
-        <div>
-          <label class="field-label" for="password">Password</label>
-          <input class="field" id="password" name="password" type="password" autocomplete="new-password" required minlength="8">
-          <p class="hint">At least 8 characters.</p>
-        </div>
-        <p id="error" class="field-error hidden" role="alert"></p>
-        <p id="message" class="alert hidden" role="status"></p>
-        <button class="btn" type="submit">Sign up</button>
-      </form>
-      <p class="note" style="margin-top:16px">Already have an account? <a href="/login.html" style="color:var(--primary);font-weight:650">Log in</a></p>
-    </div>
+  <header id="site-header"></header>
+  <main id="content">
+    <div id="page-auth"></div>
   </main>
-  <script type="module" src="/js/signup.js"></script>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    import { authPanelHtml, bindEmailAuth } from "/js/email-auth.js";
+    mountChrome();
+    const root = document.getElementById("page-auth");
+    root.innerHTML = authPanelHtml("signup");
+    bindEmailAuth(root, { initialMode: "signup" });
+  </script>
 </body>
 </html>

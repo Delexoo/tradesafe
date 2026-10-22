@@ -95,6 +95,8 @@ body.app main#content {
   border-radius: 12px;
   background: #fff;
   box-shadow: inset 0 0 0 1px transparent;
+  font: inherit;
+  color: inherit;
 }
 .field:focus {
   outline: none;
@@ -161,7 +163,8 @@ textarea.field { min-height: 96px; resize: vertical; }
 .empty {
   padding: 48px 24px; text-align: center; border-radius: 14px; background: var(--inset);
 }
-.hidden { display: none !important; }
+.hidden,
+[hidden] { display: none !important; }
 .loading { color: var(--app-muted); font-size: 14px; }
 
 .wizard-steps { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 4px; }
@@ -384,3 +387,100 @@ textarea.field { min-height: 96px; resize: vertical; }
   100% { width: 9.4rem; transform: scale(1); }
 }
 .home .split-download { animation-name: download-pill-ts; }
+
+/* Create-trade wizard: one centered column, matching footer */
+body[data-page="login"] main#content,
+body[data-page="signup"] main#content {
+  width: min(24rem, calc(100% - 2rem));
+  margin-inline: auto;
+}
+body[data-page="create"] main#content {
+  width: min(34rem, calc(100% - 2rem));
+  margin-inline: auto;
+  padding: 5.5rem 0 2rem;
+}
+body[data-page="create"] footer {
+  width: min(34rem, calc(100% - 2rem));
+  margin-inline: auto;
+  text-align: center;
+}
+body[data-page="create"] .footer-product { justify-items: center; }
+body[data-page="create"] .footer-links { justify-items: center; }
+.create-card {
+  padding: 1.6rem 1.45rem 1.35rem;
+}
+.create-intro { text-align: center; }
+.create-intro .note { margin-inline: auto; max-width: 28rem; }
+body[data-page="create"] .wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 1.35rem 0 0.35rem;
+}
+body[data-page="create"] .wizard-steps span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  color: var(--app-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+body[data-page="create"] .wizard-steps span i {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--inset);
+  font-style: normal;
+  font-size: 13px;
+}
+body[data-page="create"] .wizard-steps span.on {
+  background: transparent;
+  color: var(--text);
+}
+body[data-page="create"] .wizard-steps span.on i {
+  background: var(--primary);
+  color: #fff;
+}
+body[data-page="create"] .wizard-steps span.done i {
+  background: var(--green-bg);
+  color: var(--green);
+}
+.create-card .form-stack { margin-top: 16px; }
+.field.is-invalid {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgb(180 35 24 / 14%);
+}
+.check-card:has(input.is-invalid),
+.policy-accept:has(input.is-invalid) {
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px rgb(180 35 24 / 12%);
+}
+.field-error { margin: 6px 0 0; text-align: left; }
+.wizard-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.wizard-actions .btn,
+.wizard-actions .ghost { min-width: 8.5rem; }
+.create-success { text-align: center; }
+.create-success .invite-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px;
+}
+.create-success .invite-row .field { flex: 1 1 14rem; min-width: 0; text-align: left; }
+@media (max-width: 640px) {
+  .create-card { padding: 1.25rem 1rem 1.1rem; }
+  body[data-page="create"] .wizard-steps span { font-size: 11px; }
+}

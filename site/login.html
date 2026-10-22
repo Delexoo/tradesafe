@@ -1,39 +1,30 @@
 <!DOCTYPE html>
-<html lang="en" data-appearance="light">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Log in · TradeSafe</title>
-  <link rel="stylesheet" href="/css/fonts.css">
+  <meta name="theme-color" content="#f4f2ee">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body data-page="login">
+<body class="app" data-page="login">
   <a class="skip" href="#content">Skip to content</a>
-  <header class="topnav">
-    <a class="brand" href="/">
-      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 5 3.2 8.4 7 9 3.8-.6 7-4 7-9V6l-7-3z"/></svg></span>
-      TradeSafe
-    </a>
-  </header>
-  <main id="content" class="shell">
-    <div class="panel narrow">
-      <h1>Welcome back</h1>
-      <p class="note">Sign in to access your trade rooms.</p>
-      <form id="login-form" class="form-stack">
-        <div>
-          <label class="field-label" for="email">Email</label>
-          <input class="field" id="email" name="email" type="email" autocomplete="email" required>
-        </div>
-        <div>
-          <label class="field-label" for="password">Password</label>
-          <input class="field" id="password" name="password" type="password" autocomplete="current-password" required minlength="8">
-        </div>
-        <p id="error" class="field-error hidden" role="alert"></p>
-        <button class="btn" type="submit">Log in</button>
-      </form>
-      <p class="note" style="margin-top:16px">No account? <a href="/signup.html" style="color:var(--primary);font-weight:650">Sign up</a></p>
-    </div>
+  <header id="site-header"></header>
+  <main id="content">
+    <div id="page-auth"></div>
   </main>
-  <script type="module" src="/js/login.js"></script>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    import { authPanelHtml, bindEmailAuth } from "/js/email-auth.js";
+    mountChrome();
+    const root = document.getElementById("page-auth");
+    const mode = new URLSearchParams(location.search).get("mode") === "signup" ? "signup" : "login";
+    root.innerHTML = authPanelHtml(mode);
+    bindEmailAuth(root, { initialMode: mode });
+  </script>
 </body>
 </html>

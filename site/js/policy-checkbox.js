@@ -11,7 +11,7 @@ export function policyCheckboxHtml(ids = {}) {
     Data is retained only as long as needed for security and legal obligations (typically up to 24 months unless a legal hold applies). Processors such as hosting and database providers may process data as disclosed in the Privacy Policy. We do not sell your data.
   </p>
   <label class="policy-accept" for="${requiredId}">
-    <input type="checkbox" id="${requiredId}" name="policy_accept" required>
+    <input type="checkbox" id="${requiredId}" name="policy_accept">
     <span>
       I have read and agree to the
       <a href="/legal.html#terms" target="_blank" rel="noopener">Terms of Service</a>,

@@ -8,6 +8,13 @@ if (header && button && menu) {
     header.classList.toggle("is-open", open);
     document.documentElement.classList.toggle("menu-open", open);
     button.querySelector(".menu-label").textContent = open ? "Close" : "Menu";
+    if (open) {
+      const auth = document.querySelector(".auth-screen");
+      const loginBtn = document.querySelector(".login-toggle");
+      if (auth) auth.hidden = true;
+      loginBtn?.setAttribute("aria-expanded", "false");
+      document.documentElement.classList.remove("auth-open");
+    }
   };
 
   button.addEventListener("click", () => {

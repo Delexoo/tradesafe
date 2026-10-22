@@ -3,6 +3,34 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.8",
+      "date": "2026-10-22",
+      "title": "Create wizard and email sign-in",
+      "sections": [
+        {
+          "heading": "Wizard",
+          "added": [
+            "The create-trade form is a centered card. Continue moves on when the title and amount are filled, and names whichever of those is empty. Terms, the acknowledgement, display name, and policies are named on their own steps."
+          ]
+        },
+        {
+          "heading": "Design",
+          "added": [
+            "The home icon is gone. Menu sits on the left and Log in sits on the right."
+          ],
+          "fixes": [
+            "Styles and scripts are not cached for an hour, so a refresh shows the latest page."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Log in and sign up use an email link only. There is no password."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.7",
       "date": "2026-10-22",
       "title": "Trade Confidence for verified participants",

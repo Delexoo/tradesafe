@@ -1,4 +1,7 @@
 /** Shared Hooxie-style header + footer for TradeSafe pages. */
+import { authPanelHtml, bindEmailAuth } from "./email-auth.js";
+import { getSession } from "./supabase.js";
+
 const MENU_LINKS = [
   { href: "/", label: "Home" },
   { href: "/create.html", label: "Create a trade" },
@@ -11,16 +14,52 @@ const MENU_LINKS = [
 export function mountChrome({ active } = {}) {
   const header = document.getElementById("site-header");
   if (header) {
+    const params = new URLSearchParams(location.search);
+    const startMode = params.get("mode") === "signup" ? "signup" : "login";
     header.innerHTML = `
-      <a class="home-btn" href="/" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.6 12 4l8 6.6V20a1 1 0 0 1-1 1h-5v-6.2H10V21H5a1 1 0 0 1-1-1z"/></svg></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu">
         <span class="menu-label">Menu</span>
         <span class="menu-bars" aria-hidden="true"></span>
       </button>
+      <button class="login-toggle" type="button" aria-expanded="false" aria-controls="auth-panel">Log in</button>
       <nav class="menu-screen" id="site-menu" aria-label="Pages">
         ${MENU_LINKS.map((l) => `<a href="${l.href}">${l.label}</a>`).join("")}
       </nav>
+      <div class="auth-screen" id="auth-panel" hidden>
+        ${authPanelHtml(startMode)}
+      </div>
     `;
+
+    const loginBtn = header.querySelector(".login-toggle");
+    const auth = header.querySelector(".auth-screen");
+    const menuBtn = header.querySelector(".menu-toggle");
+    const authApi = bindEmailAuth(auth, { initialMode: startMode });
+
+    const setAuthOpen = (open) => {
+      auth.hidden = !open;
+      loginBtn.setAttribute("aria-expanded", String(open));
+      document.documentElement.classList.toggle("auth-open", open);
+      if (open) {
+        if (menuBtn.getAttribute("aria-expanded") === "true") menuBtn.click();
+        authApi?.focus();
+      }
+    };
+
+    loginBtn.addEventListener("click", () => {
+      setAuthOpen(loginBtn.getAttribute("aria-expanded") !== "true");
+    });
+    auth.addEventListener("click", (event) => {
+      if (event.target === auth) setAuthOpen(false);
+    });
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") setAuthOpen(false);
+    });
+
+    getSession()
+      .then((session) => {
+        if (session?.user?.email) loginBtn.textContent = "Account";
+      })
+      .catch(() => {});
   }
 
   const footer = document.getElementById("site-footer");

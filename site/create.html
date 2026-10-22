@@ -8,39 +8,44 @@
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/app.css?v=20261022c">
 </head>
 <body class="app" data-page="create">
   <a class="skip" href="#content">Skip to content</a>
   <header id="site-header"></header>
   <main id="content">
-    <div class="panel wide">
-      <h1>Create a trade</h1>
-      <p class="note">Four steps — details, role, terms, then review. No account required.</p>
-      <div class="wizard-steps" id="steps" aria-label="Wizard steps">
-        <span class="on" data-step="0">1 Details</span>
-        <span data-step="1">2 Role</span>
-        <span data-step="2">3 Terms</span>
-        <span data-step="3">4 Review</span>
+    <div class="panel create-card" id="wizard">
+      <div class="create-intro">
+        <h1>Create a trade</h1>
+        <p class="note">Four steps — details, role, terms, then review. No account required.</p>
       </div>
-      <form id="create-form" class="form-stack">
+      <div class="wizard-steps" id="steps" aria-label="Wizard steps">
+        <span class="on" data-step="0"><i>1</i> Details</span>
+        <span data-step="1"><i>2</i> Role</span>
+        <span data-step="2"><i>3</i> Terms</span>
+        <span data-step="3"><i>4</i> Review</span>
+      </div>
+      <form id="create-form" class="form-stack" novalidate>
         <section data-pane="0" class="form-stack">
           <div>
             <label class="field-label" for="title">Trade title</label>
-            <input class="field" id="title" required maxlength="200" placeholder="e.g. Vintage camera sale">
+            <input class="field" id="title" name="title" maxlength="200" autocomplete="off" placeholder="e.g. Vintage camera sale">
+            <p class="field-error hidden" data-error-for="title"></p>
           </div>
           <div>
             <label class="field-label" for="description">Description</label>
-            <textarea class="field" id="description" maxlength="5000" placeholder="What is being traded?"></textarea>
+            <textarea class="field" id="description" name="description" maxlength="5000" placeholder="What is being traded?"></textarea>
+            <p class="hint">Optional.</p>
           </div>
           <div class="form-row cols-2">
             <div>
               <label class="field-label" for="amount">Amount</label>
-              <input class="field" id="amount" type="number" min="0.01" step="0.01" required>
+              <input class="field" id="amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+              <p class="field-error hidden" data-error-for="amount"></p>
             </div>
             <div>
               <label class="field-label" for="currency">Currency</label>
-              <select class="field" id="currency">
+              <select class="field" id="currency" name="currency">
                 <option value="usd">USD</option>
                 <option value="eur">EUR</option>
                 <option value="gbp">GBP</option>
@@ -49,7 +54,7 @@
           </div>
           <div>
             <label class="field-label" for="category">Category</label>
-            <select class="field" id="category">
+            <select class="field" id="category" name="category">
               <option value="physical">Physical goods</option>
               <option value="digital">Digital</option>
               <option value="electronics">Electronics</option>
@@ -63,7 +68,7 @@
         <section data-pane="1" class="form-stack hidden">
           <div>
             <label class="field-label" for="role">Your role</label>
-            <select class="field" id="role">
+            <select class="field" id="role" name="role">
               <option value="seller">Seller</option>
               <option value="buyer">Buyer</option>
             </select>
@@ -71,7 +76,7 @@
           </div>
           <div>
             <label class="field-label" for="delivery">Delivery method</label>
-            <select class="field" id="delivery">
+            <select class="field" id="delivery" name="delivery">
               <option value="shipping">Shipping</option>
               <option value="digital_transfer">Digital transfer</option>
               <option value="pickup">Pickup</option>
@@ -83,42 +88,47 @@
         <section data-pane="2" class="form-stack hidden">
           <div>
             <label class="field-label" for="terms">Terms summary</label>
-            <textarea class="field" id="terms" placeholder="Completion conditions, dispute notes, cancellation…"></textarea>
+            <textarea class="field" id="terms" name="terms" maxlength="5000" placeholder="Completion conditions, dispute notes, cancellation…"></textarea>
+            <p class="field-error hidden" data-error-for="terms"></p>
           </div>
-          <label class="hint" style="display:flex;gap:10px;align-items:flex-start">
-            <input type="checkbox" id="ack" required style="margin-top:3px">
+          <label class="policy-accept check-card" for="ack">
+            <input type="checkbox" id="ack" name="ack">
             <span>I acknowledge TradeSafe coordinates this deal and does not provide licensed escrow or insurance.</span>
           </label>
+          <p class="field-error hidden" data-error-for="ack"></p>
         </section>
         <section data-pane="3" class="form-stack hidden">
           <div class="inset" id="review"></div>
           <div>
             <label class="field-label" for="display-name">Your display name</label>
-            <input class="field" id="display-name" maxlength="80" required placeholder="How you’ll appear in this trade">
+            <input class="field" id="display-name" name="display-name" maxlength="80" autocomplete="nickname" placeholder="How you’ll appear in this trade">
             <p class="hint">Temporary guest name — not a login.</p>
+            <p class="field-error hidden" data-error-for="display-name"></p>
           </div>
           <div id="policy-box"></div>
+          <p class="field-error hidden" data-error-for="policy-accept"></p>
           <p class="hint">Accepting platform policies does <strong>not</strong> accept the other party’s commercial terms.</p>
         </section>
         <p id="error" class="field-error hidden" role="alert"></p>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="wizard-actions">
           <button type="button" class="ghost" id="back" hidden>Back</button>
-          <button type="submit" class="btn" id="next">Continue</button>
+          <button type="button" class="btn" id="next">Continue</button>
         </div>
       </form>
-      <div id="created" class="hidden" style="margin-top:24px">
-        <div class="alert">
-          <div>
-            <strong>Trade created</strong>
-            <p style="margin:6px 0 0">Share this invite link once. The raw token is shown only here.</p>
-          </div>
-        </div>
-        <div class="inset" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input class="field" id="invite-url" readonly style="flex:1;min-width:200px">
-          <button type="button" class="ghost" id="copy-invite">Copy link</button>
-          <a class="btn" id="open-room" href="#">Open room</a>
+    </div>
+    <div id="created" class="panel create-card create-success hidden">
+      <div class="alert" style="text-align:left">
+        <div>
+          <strong>Trade created</strong>
+          <p style="margin:6px 0 0">Share this invite link once. The raw token is shown only here.</p>
         </div>
       </div>
+      <div class="invite-row">
+        <input class="field" id="invite-url" readonly aria-label="Invite link">
+        <button type="button" class="ghost" id="copy-invite">Copy link</button>
+        <a class="btn" id="open-room" href="#">Open room</a>
+      </div>
+      <p class="hint" id="copy-status" role="status"></p>
     </div>
   </main>
   <footer id="site-footer"></footer>
@@ -126,6 +136,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome({ active: "Create a trade" });
   </script>
-  <script type="module" src="/js/create.js"></script>
+  <script type="module" src="/js/create.js?v=20261022c"></script>
 </body>
 </html>
