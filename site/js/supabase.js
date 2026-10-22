@@ -11,6 +11,9 @@ export async function getSupabase() {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      // Implicit puts tokens in the email link hash so another device can finish
+      // verify. PKCE keeps the code verifier on the device that requested the link.
+      flowType: "implicit",
     },
   });
   return client;

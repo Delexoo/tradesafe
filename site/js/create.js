@@ -4,7 +4,7 @@ import { platformFeeCents, sellerNetCents } from "./fees.js";
 import { money } from "./format.js";
 import { enhanceSelects } from "./listbox.js";
 import { policyCheckboxHtml, wirePolicyGate } from "./policy-checkbox.js";
-import { getSession } from "./supabase.js";
+import { getSession, getSupabase } from "./supabase.js";
 import { resumeEmailHandoff, sendEmailLink } from "./email-handoff.js";
 import { emailProblem } from "./auth-email.js";
 
@@ -394,8 +394,11 @@ next.addEventListener("click", async () => {
 });
 
 function openWizard(session) {
-  document.getElementById("account-gate").classList.add("hidden");
+  const gate = document.getElementById("account-gate");
+  gate.classList.add("hidden");
+  gate.setAttribute("hidden", "");
   wizard.classList.remove("hidden");
+  wizard.removeAttribute("hidden");
   const name = document.getElementById("display-name");
   if (!name.value) {
     name.value = session.user.user_metadata?.display_name || session.user.email?.split("@")[0] || "";
@@ -403,6 +406,29 @@ function openWizard(session) {
   if (new URLSearchParams(location.search).get("payout") === "return") step = panes.length - 1;
   restoreDraft();
   showStep();
+}
+
+function showAccountGate() {
+  const gate = document.getElementById("account-gate");
+  gate.classList.remove("hidden");
+  gate.removeAttribute("hidden");
+  document.getElementById("account-checking")?.remove();
+  accountForm?.classList.remove("hidden");
+  document.getElementById("account-switch")?.closest("p")?.classList.remove("hidden");
+}
+
+function showCheckingGate() {
+  const gate = document.getElementById("account-gate");
+  let checking = document.getElementById("account-checking");
+  if (!checking) {
+    checking = document.createElement("p");
+    checking.id = "account-checking";
+    checking.className = "note";
+    checking.textContent = "Checking if you are already signed in…";
+    gate.insertBefore(checking, accountForm);
+  }
+  accountForm?.classList.add("hidden");
+  document.getElementById("account-switch")?.closest("p")?.classList.add("hidden");
 }
 
 const accountForm = document.getElementById("account-form");
@@ -460,10 +486,27 @@ accountForm.addEventListener("submit", async (event) => {
 });
 
 document.documentElement.dataset.createReady = "1";
-const session = await getSession();
-if (session?.user) openWizard(session);
-else {
-  resumeEmailHandoff("/create.html").then((nextSession) => {
-    if (nextSession?.user) openWizard(nextSession);
-  });
+showCheckingGate();
+
+async function enterIfSignedIn() {
+  const session = await getSession();
+  if (session?.user) {
+    openWizard(session);
+    return true;
+  }
+  return false;
+}
+
+if (await enterIfSignedIn()) {
+  /* already in the wizard */
+} else {
+  const handed = await resumeEmailHandoff("/create.html");
+  if (handed?.user) openWizard(handed);
+  else {
+    showAccountGate();
+    const sb = await getSupabase();
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) openWizard(session);
+    });
+  }
 }

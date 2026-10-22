@@ -35,18 +35,24 @@
       askedHere = false;
     }
 
-    const result = await finishEmailHandoff(loginId);
-    if (result.ok && askedHere) {
-      location.replace(next);
-    } else if (result.ok) {
-      title.textContent = "Check your other device";
-      status.textContent =
-        "That device is signing in now. You can close this page.";
-    } else if (result.signedInHere) {
-      title.textContent = "Almost there";
-      status.textContent =
-        "This browser is signed in, but the device that asked for the email could not be updated. Request a new link from that device.";
-    } else {
+    try {
+      const result = await finishEmailHandoff(loginId);
+      if (result.ok && askedHere) {
+        location.replace(next);
+      } else if (result.ok) {
+        title.textContent = "Check your other device";
+        status.textContent =
+          "That device is signing in now. You can close this page.";
+      } else if (result.signedInHere) {
+        title.textContent = "You are signed in here";
+        status.innerHTML =
+          `Continue on this device: <a href="${next}">open TradeSafe</a>. The other device may still be waiting on an older link.`;
+      } else {
+        title.textContent = "Link did not work";
+        status.textContent =
+          "Go back to the device that asked for the email and request a new one. Open the newest email link.";
+      }
+    } catch {
       title.textContent = "Link did not work";
       status.textContent =
         "Go back to the device that asked for the email and request a new one.";

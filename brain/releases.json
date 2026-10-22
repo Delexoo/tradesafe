@@ -3,6 +3,21 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.23",
+      "date": "2026-10-22",
+      "title": "Cross-device email verify and skip create account when signed in",
+      "tag": "v0.1.23",
+      "sections": [
+        {
+          "heading": "Auth",
+          "fixes": [
+            "Magic-link sign-in uses the implicit token flow so opening the email on another device can finish verify and hand the session back.",
+            "Create a trade skips the account gate when you are already signed in and opens the wizard instead."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.22",
       "date": "2026-10-22",
       "title": "Conjoined home and menu control",

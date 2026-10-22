@@ -64,6 +64,14 @@ export function mountChrome({ active } = {}) {
         if (session?.user?.email) loginBtn.textContent = "Account";
       })
       .catch(() => {});
+
+    import("./supabase.js").then(({ getSupabase }) =>
+      getSupabase().then((sb) => {
+        sb.auth.onAuthStateChange((_event, session) => {
+          loginBtn.textContent = session?.user?.email ? "Account" : "Log in";
+        });
+      }),
+    );
   }
 
   const footer = document.getElementById("site-footer");
