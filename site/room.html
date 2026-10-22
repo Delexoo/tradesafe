@@ -85,6 +85,38 @@
           <div class="card-hd"><h2>Your actions</h2></div>
           <div class="card-bd actions" id="actions"></div>
         </section>
+
+        <section class="card" style="margin-top:16px">
+          <div class="card-hd"><h2>Report a concern</h2></div>
+          <div class="card-bd">
+            <p class="hint">Report scams, impersonation, suspicious behavior, unauthorized access, payment concerns, abuse, or compromised invites. Reports go to authorized security staff. Other participants will not see your report details or their IP/device data.</p>
+            <form id="report-form" class="form-stack" style="margin-top:12px">
+              <div>
+                <label class="field-label" for="report-category">Category</label>
+                <select class="field" id="report-category" required>
+                  <option value="scam">Suspected scam</option>
+                  <option value="impersonation">Impersonation</option>
+                  <option value="suspicious">Suspicious behavior</option>
+                  <option value="unauthorized_access">Unauthorized trade access</option>
+                  <option value="payment">Payment-related concern</option>
+                  <option value="abuse">Threats or abuse</option>
+                  <option value="compromised_invite">Compromised invitation / session</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label" for="report-summary">Summary</label>
+                <input class="field" id="report-summary" maxlength="500" required placeholder="Brief description">
+              </div>
+              <div>
+                <label class="field-label" for="report-details">Details</label>
+                <textarea class="field" id="report-details" maxlength="5000" placeholder="Optional details"></textarea>
+              </div>
+              <p id="report-msg" class="hint hidden" role="status"></p>
+              <button type="submit" class="ghost btn-sm">Submit report</button>
+            </form>
+          </div>
+        </section>
       </div>
       <div id="room-error" class="empty hidden">
         <h3>Could not load this room</h3>

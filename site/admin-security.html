@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Security management · TradeSafe</title>
+  <meta name="theme-color" content="#f4f2ee">
+  <meta name="robots" content="noindex">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="stylesheet" href="/site.css">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="app" data-page="admin-security">
+  <a class="skip" href="#content">Skip to content</a>
+  <header id="site-header"></header>
+  <main id="content">
+    <div class="panel wide">
+      <h1>Security management</h1>
+      <p class="note">Authorized security administrators only. Access is audited. Summary views omit raw IP addresses and device fingerprints.</p>
+      <p id="admin-gate" class="loading">Checking access…</p>
+      <div id="admin-app" class="hidden">
+        <div class="progress-grid" id="metrics" style="margin:16px 0"></div>
+        <div class="grid-2">
+          <section class="card">
+            <div class="card-hd"><h2>Recent reports</h2></div>
+            <div class="card-bd" id="reports"></div>
+          </section>
+          <section class="card">
+            <div class="card-hd"><h2>Recent security events</h2></div>
+            <div class="card-bd" id="events"></div>
+          </section>
+        </div>
+        <section class="card" style="margin-top:16px">
+          <div class="card-hd"><h2>Incident investigation</h2></div>
+          <div class="card-bd form-stack">
+            <div class="form-row cols-2">
+              <div>
+                <label class="field-label" for="inc-id">Incident public ID</label>
+                <input class="field" id="inc-id" placeholder="INC-XXXXXXXX">
+              </div>
+              <div style="display:flex;align-items:flex-end;gap:8px">
+                <button type="button" class="btn" id="load-inc">Open</button>
+                <label class="hint" style="display:flex;gap:6px;align-items:center">
+                  <input type="checkbox" id="reveal-ip"> Reveal IP hashes (audited)
+                </label>
+              </div>
+            </div>
+            <div id="incident-view" class="inset hidden"></div>
+            <form id="inc-update" class="form-stack hidden">
+              <div class="form-row cols-2">
+                <div>
+                  <label class="field-label" for="inc-status">Status</label>
+                  <select class="field" id="inc-status">
+                    <option value="open">open</option>
+                    <option value="triage">triage</option>
+                    <option value="investigating">investigating</option>
+                    <option value="escalated">escalated</option>
+                    <option value="resolved">resolved</option>
+                    <option value="closed">closed</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="inc-triage">Triage</label>
+                  <select class="field" id="inc-triage">
+                    <option value="unreviewed">unreviewed</option>
+                    <option value="low">low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="field-label" for="inc-resolution">Resolution / decision reason</label>
+                <textarea class="field" id="inc-resolution" placeholder="Required for consequential decisions"></textarea>
+              </div>
+              <div>
+                <label class="field-label" for="inc-note">Internal note</label>
+                <textarea class="field" id="inc-note"></textarea>
+              </div>
+              <button type="submit" class="btn">Save investigation update</button>
+              <p id="inc-msg" class="hint hidden"></p>
+            </form>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module">
+    import { mountChrome } from "/js/chrome.js";
+    mountChrome({ active: "Security" });
+  </script>
+  <script type="module" src="/js/admin-security.js"></script>
+</body>
+</html>

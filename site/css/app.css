@@ -212,6 +212,9 @@ textarea.field { min-height: 96px; resize: vertical; }
 .policy-required {
   display: block; margin-top: 6px; font-style: normal; color: var(--app-muted); font-size: 13px; font-weight: 600;
 }
+.policy-block { display: flex; flex-direction: column; gap: 12px; }
+.policy-explain { margin: 0; }
+.policy-optional { opacity: 0.95; }
 
 /* Room layout extras */
 .room-top {

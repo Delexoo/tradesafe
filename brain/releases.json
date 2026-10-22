@@ -3,6 +3,41 @@
   "repo": "tradesafe",
   "updates": [
     {
+      "version": "0.1.5",
+      "date": "2026-10-22",
+      "title": "Security consent, fraud logging, and admin review",
+      "tag": "v0.1.5",
+      "sections": [
+        {
+          "heading": "Security",
+          "added": [
+            "Create and join require server-recorded acceptance of Terms, Privacy, Dispute, Security, and Device Notice drafts (bundle 2026-10-22-s), with a separate optional device-recognition checkbox.",
+            "A centralized security-event log records create/join, invite failures, unauthorized trade access, consent, reports, and payment webhooks using hashed IP and session refs — not invasive fingerprinting.",
+            "Participants can submit security reports from the trade room; reporters see status only, never another party’s IP, device data, or risk score.",
+            "Authorized admins get a Security Management dashboard with incident timelines, audited investigation updates, and masked IP by default."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Optional first-party device cookies are issued only after optional consent; declining does not bypass guest sessions, authorization, invite rate limits, or payment integrity checks."
+          ]
+        },
+        {
+          "heading": "Payments",
+          "added": [
+            "Payment status changes only through verified provider/webhook or demo-server paths; client set_payment_status actions are rejected."
+          ]
+        },
+        {
+          "heading": "API",
+          "added": [
+            "New consent, report, admin security, and payment webhook routes enforce consent and admin checks on the server with RLS deny-all on security tables for clients."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.4",
       "date": "2026-10-22",
       "title": "Hooxie site chrome and legal layout",

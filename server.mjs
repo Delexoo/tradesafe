@@ -12,9 +12,30 @@ import {
   resolveActor,
   ensureGuestActor,
   getActivePolicies,
-  recordPlatformPolicyAcceptance,
+  isSecurityAdmin,
   hashToken as hashGuestToken,
 } from "./lib/guest-auth.mjs";
+import {
+  CONSENT_BUNDLE_VERSION,
+  hasRequiredConsent,
+  recordSecurityConsent,
+  clientIp,
+  hashIp,
+} from "./lib/security.mjs";
+import {
+  ensureConsentForProtectedAction,
+  emitSecurityEvent,
+  bumpInviteFail,
+  inviteFailCount,
+} from "./lib/security-request.mjs";
+import { RETENTION_DAYS } from "./lib/retention.mjs";
+import {
+  createSecurityReport as createSecurityReportImpl,
+  getReportStatus as getReportStatusImpl,
+  handleAdminSecurity as handleAdminSecurityImpl,
+  handlePaymentWebhook as handlePaymentWebhookImpl,
+  applyProviderPaymentUpdate as applyProviderPaymentUpdateImpl,
+} from "./lib/security-handlers.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -152,6 +173,8 @@ async function handleApi(req, res, url) {
         paymentProvider: PAYMENT_PROVIDER,
         appUrl: process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${PORT}`,
         guestMode: true,
+        consentBundleVersion: CONSENT_BUNDLE_VERSION,
+        retentionDays: RETENTION_DAYS,
       },
       req,
     );
@@ -160,7 +183,17 @@ async function handleApi(req, res, url) {
 
   if (p === "/api/policies" && req.method === "GET") {
     const policies = await getActivePolicies(getAdmin());
-    json(res, 200, { policies }, req);
+    json(
+      res,
+      200,
+      { policies, consentBundleVersion: CONSENT_BUNDLE_VERSION },
+      req,
+    );
+    return;
+  }
+
+  if (p === "/api/payments/webhook" && req.method === "POST") {
+    json(res, 200, await handlePaymentWebhookImpl(getAdmin(), req), req);
     return;
   }
 
@@ -213,6 +246,100 @@ async function handleApi(req, res, url) {
 
   if (!actor && p !== "/api/payments/webhook") {
     json(res, 401, { error: "Unauthorized" }, req);
+    return;
+  }
+
+  if (p === "/api/security/consent" && req.method === "GET") {
+    const consent = await hasRequiredConsent(getAdmin(), actor.id);
+    json(
+      res,
+      200,
+      {
+        consentBundleVersion: CONSENT_BUNDLE_VERSION,
+        requiredAccepted: !!consent?.required_accepted,
+        optionalDeviceAccepted: !!consent?.optional_device_accepted,
+        acceptedAt: consent?.accepted_at || null,
+      },
+      req,
+    );
+    return;
+  }
+
+  if (p === "/api/security/consent" && req.method === "POST") {
+    const body = await readJson(req);
+    try {
+      const result = await recordSecurityConsent(getAdmin(), actor.id, {
+        acceptedRequired:
+          body.acceptedRequired === true || body.acceptedPolicies === true,
+        acceptedOptionalDevice: body.acceptedOptionalDevice === true,
+        userAgent: req.headers["user-agent"],
+      });
+      if (result.optional_device_accepted) {
+        const { ensureDeviceToken } = await import("./lib/security.mjs");
+        await ensureDeviceToken(
+          getAdmin(),
+          req,
+          actor.id,
+          true,
+          req._pendingCookies,
+        );
+      }
+      await emitSecurityEvent(getAdmin(), req, actor, {
+        event_type: "consent_recorded",
+        payload: {
+          consent_bundle_version: result.consent_bundle_version,
+          optional_device: result.optional_device_accepted,
+        },
+      });
+      json(res, 200, result, req);
+    } catch (err) {
+      json(
+        res,
+        err.status || 400,
+        {
+          error: err.message,
+          code: err.code || "CONSENT_FAILED",
+          retry: "Re-check the required policies and try again.",
+        },
+        req,
+      );
+    }
+    return;
+  }
+
+  if (p === "/api/security/reports" && req.method === "POST") {
+    const body = await readJson(req);
+    json(
+      res,
+      201,
+      await createSecurityReportImpl(getAdmin(), actor, body, req),
+      req,
+    );
+    return;
+  }
+
+  const reportMatch = p.match(/^\/api\/security\/reports\/([^/]+)$/);
+  if (reportMatch && req.method === "GET") {
+    json(
+      res,
+      200,
+      await getReportStatusImpl(getAdmin(), actor, reportMatch[1]),
+      req,
+    );
+    return;
+  }
+
+  if (p.startsWith("/api/admin/security")) {
+    if (!(await isSecurityAdmin(getAdmin(), actor.id))) {
+      await emitSecurityEvent(getAdmin(), req, actor, {
+        event_type: "admin_access_denied",
+        severity: "medium",
+        payload: { path: p },
+      });
+      json(res, 403, { error: "Forbidden" }, req);
+      return;
+    }
+    await handleAdminSecurityImpl(getAdmin(), req, res, url, actor, p, json);
     return;
   }
 
@@ -273,8 +400,31 @@ async function handleApi(req, res, url) {
     const rest = tradeMatch[2] || "";
 
     if (rest === "" && req.method === "GET") {
-      const room = await getRoom(actor.id, tradeId);
-      json(res, 200, room, req);
+      try {
+        const room = await getRoom(actor.id, tradeId);
+        json(res, 200, room, req);
+      } catch (err) {
+        if (err.code === "TRADE_ACCESS_DENIED" || err.status === 403) {
+          await emitSecurityEvent(getAdmin(), req, actor, {
+            event_type: "unauthorized_trade_access",
+            severity: "high",
+            transaction_id: tradeId,
+            payload: {},
+          });
+        }
+        throw err;
+      }
+      return;
+    }
+    if (rest === "/report" && req.method === "POST") {
+      const body = await readJson(req);
+      body.transaction_id = tradeId;
+      json(
+        res,
+        201,
+        await createSecurityReportImpl(getAdmin(), actor, body, req),
+        req,
+      );
       return;
     }
     if (rest === "/accept" && req.method === "POST") {
@@ -320,7 +470,7 @@ async function handleApi(req, res, url) {
         req._pendingCookies,
       );
     }
-    json(res, 200, await joinInvite(actor, body), req);
+    json(res, 200, await joinInvite(actor, body, req), req);
     return;
   }
 
@@ -387,11 +537,24 @@ async function createTrade(actor, input, req) {
     .update({ display_name: displayName })
     .eq("id", actor.id);
 
-  // Validate + record platform policies before creating the trade (server versions only)
-  await recordPlatformPolicyAcceptance(getAdmin(), actor.id, {
-    acceptedPolicies: input.acceptedPolicies,
-    userAgent: req.headers["user-agent"],
-  });
+  // Fail closed: required security consent must be recorded server-side
+  let consentPack;
+  try {
+    consentPack = await ensureConsentForProtectedAction(
+      getAdmin(),
+      actor,
+      input,
+      req,
+      req._pendingCookies || [],
+    );
+  } catch (err) {
+    await emitSecurityEvent(getAdmin(), req, actor, {
+      event_type: "consent_blocked_create",
+      severity: "low",
+      payload: { reason: err.code || "CONSENT_REQUIRED" },
+    });
+    throw err;
+  }
 
   const isDemo = DEMO_MODE || PAYMENT_PROVIDER !== "stripe";
   const creatorRole = input.creator_role === "buyer" ? "buyer" : "seller";
@@ -475,6 +638,17 @@ async function createTrade(actor, input, req) {
     verification_source: "system",
   });
 
+  await emitSecurityEvent(getAdmin(), req, actor, {
+    event_type: "trade_created",
+    transaction_id: tx.id,
+    device_ref: consentPack.device?.ref || null,
+    isNewDevice: consentPack.device?.is_new,
+    payload: {
+      reference_code: tx.reference_code,
+      optional_device: consentPack.optionalOk,
+    },
+  });
+
   return {
     transaction: tx,
     inviteToken: raw,
@@ -522,7 +696,10 @@ async function getRoom(userId, tradeId) {
     .maybeSingle();
 
   if (!participant && tx.creator_id !== userId) {
-    throw new Error("Forbidden");
+    const err = new Error("Forbidden");
+    err.status = 403;
+    err.code = "TRADE_ACCESS_DENIED";
+    throw err;
   }
 
   const [
@@ -637,7 +814,7 @@ async function previewInvite(token) {
   };
 }
 
-async function joinInvite(actor, body) {
+async function joinInvite(actor, body, req) {
   const token = body.token;
   const displayName = String(body.display_name || actor.display_name || "Guest")
     .trim()
@@ -647,11 +824,30 @@ async function joinInvite(actor, body) {
     err.status = 400;
     throw err;
   }
-  if (body.acceptedPolicies !== true) {
-    const err = new Error(
-      "You must accept the Terms of Service, Privacy Policy, and Transaction and Dispute Policies.",
+
+  const ipH = hashIp(clientIp(req));
+  const fails = inviteFailCount(ipH);
+  if (fails >= 20) {
+    const err = new Error("Too many invitation attempts. Try again later.");
+    err.status = 429;
+    throw err;
+  }
+
+  let consentPack;
+  try {
+    consentPack = await ensureConsentForProtectedAction(
+      getAdmin(),
+      actor,
+      body,
+      req,
+      req._pendingCookies || [],
     );
-    err.status = 400;
+  } catch (err) {
+    await emitSecurityEvent(getAdmin(), req, actor, {
+      event_type: "consent_blocked_join",
+      severity: "low",
+      payload: { reason: err.code || "CONSENT_REQUIRED" },
+    });
     throw err;
   }
 
@@ -666,10 +862,41 @@ async function joinInvite(actor, body) {
     .select("*")
     .eq("token_hash", hashToken(token))
     .maybeSingle();
-  if (!inv) throw new Error("Invalid invitation");
-  if (inv.revoked_at) throw new Error("Invitation revoked");
-  if (new Date(inv.expires_at) < new Date()) throw new Error("Invitation expired");
-  if (inv.use_count >= inv.max_uses) throw new Error("Invitation exhausted");
+  if (!inv) {
+    bumpInviteFail(ipH);
+    await emitSecurityEvent(getAdmin(), req, actor, {
+      event_type: "invite_redeem_failed",
+      severity: "medium",
+      inviteFailCount: fails + 1,
+      payload: { reason: "invalid" },
+    });
+    const err = new Error("Invalid invitation");
+    err.status = 400;
+    throw err;
+  }
+  if (inv.revoked_at) {
+    bumpInviteFail(ipH);
+    await emitSecurityEvent(getAdmin(), req, actor, {
+      event_type: "invite_redeem_failed",
+      severity: "medium",
+      transaction_id: inv.transaction_id,
+      payload: { reason: "revoked" },
+    });
+    throw Object.assign(new Error("Invitation revoked"), { status: 400 });
+  }
+  if (new Date(inv.expires_at) < new Date()) {
+    bumpInviteFail(ipH);
+    await emitSecurityEvent(getAdmin(), req, actor, {
+      event_type: "invite_redeem_failed",
+      severity: "low",
+      transaction_id: inv.transaction_id,
+      payload: { reason: "expired" },
+    });
+    throw Object.assign(new Error("Invitation expired"), { status: 400 });
+  }
+  if (inv.use_count >= inv.max_uses) {
+    throw Object.assign(new Error("Invitation exhausted"), { status: 400 });
+  }
 
   const { data: existing } = await getAdmin()
     .from("ts_participants")
@@ -680,12 +907,6 @@ async function joinInvite(actor, body) {
   if (existing?.status === "joined") {
     return { transactionId: inv.transaction_id, alreadyJoined: true };
   }
-
-  await recordPlatformPolicyAcceptance(getAdmin(), actor.id, {
-    acceptedPolicies: true,
-    transactionId: inv.transaction_id,
-    userAgent: null,
-  });
 
   const { data: slot } = await getAdmin()
     .from("ts_participants")
@@ -732,6 +953,13 @@ async function joinInvite(actor, body) {
     summary: `Participant joined as ${inv.role}`,
     verification_source: "system",
   });
+  await emitSecurityEvent(getAdmin(), req, actor, {
+    event_type: "invite_redeemed",
+    transaction_id: inv.transaction_id,
+    device_ref: consentPack.device?.ref || null,
+    isNewDevice: consentPack.device?.is_new,
+    payload: { role: inv.role, optional_device: consentPack.optionalOk },
+  });
   return { transactionId: inv.transaction_id, role: inv.role };
 }
 
@@ -741,6 +969,19 @@ async function performAction(userId, tradeId, action, payload) {
   if (!role) throw new Error("Forbidden");
   const tx = room.transaction;
   const isDemo = !!tx.is_demo;
+
+  // Clients cannot set payment status or grant themselves roles
+  if (
+    action === "set_payment_status" ||
+    action === "set_role" ||
+    action === "grant_admin" ||
+    payload?.payment_status ||
+    payload?.is_admin
+  ) {
+    const err = new Error("Forbidden");
+    err.status = 403;
+    throw err;
+  }
 
   if (action === "initiate_payment") {
     if (role !== "buyer") throw new Error("Only buyer");
@@ -782,35 +1023,27 @@ async function performAction(userId, tradeId, action, payload) {
     if (role !== "buyer") throw new Error("Only buyer");
     const payment = room.payment;
     if (!payment) throw new Error("Initiate payment first");
-    await getAdmin()
-      .from("ts_payments")
-      .update({
-        status: "authorized",
-        authorized_at: new Date().toISOString(),
-      })
-      .eq("id", payment.id);
-    await getAdmin()
-      .from("ts_transactions")
-      .update({ status: "awaiting_fulfillment" })
-      .eq("id", tradeId);
-    await getAdmin()
-      .from("ts_milestones")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        verification_source: "provider_confirmed",
-      })
-      .eq("transaction_id", tradeId)
-      .eq("key", "buyer_payment_authorized");
-    await getAdmin().from("ts_events").insert({
-      transaction_id: tradeId,
+    // Demo path is an explicit server-side simulation, not client-trusted status
+    await applyProviderPaymentUpdateImpl(getAdmin(), {
+      provider_payment_id: payment.provider_payment_id,
+      status: "authorized",
+      source: "demo_server",
+      idempotency_key: `demo_auth_${payment.id}`,
       actor_id: userId,
-      event_type: "payment_authorized",
-      summary: "DEMO: Payment authorized (simulated — not real money)",
-      verification_source: "provider_confirmed",
-      payload: { demo: true },
     });
     return { ok: true };
+  }
+
+  if (
+    action === "set_payment_status" ||
+    action === "update_payment" ||
+    action === "capture_payment"
+  ) {
+    const err = new Error(
+      "Payment status can only change via verified provider events",
+    );
+    err.status = 403;
+    throw err;
   }
 
   if (action === "mark_preparing") {

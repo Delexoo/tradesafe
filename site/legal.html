@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Legal · TradeSafe</title>
-  <meta name="description" content="Terms, privacy, and transaction policies for TradeSafe.">
+  <meta name="description" content="Terms, privacy, security, and dispute policies for TradeSafe.">
   <meta name="theme-color" content="#f4f2ee">
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
@@ -15,64 +15,103 @@
   <header id="site-header"></header>
   <main id="content">
     <h1>Legal</h1>
-    <p class="note">Draft product policies — not professionally reviewed legal advice. Version 2026-10-22.</p>
+    <p class="note">Draft product policies — <strong>not professionally reviewed legal advice</strong>. Require legal review before production. Version 2026-10-22-s.</p>
     <div class="legal-switch" role="tablist" aria-label="Legal documents">
       <button type="button" role="tab" id="tab-terms" data-legal="terms" aria-selected="true" aria-controls="terms">Terms</button>
       <button type="button" role="tab" id="tab-privacy" data-legal="privacy" aria-selected="false" aria-controls="privacy">Privacy</button>
       <button type="button" role="tab" id="tab-disputes" data-legal="disputes" aria-selected="false" aria-controls="disputes">Disputes</button>
+      <button type="button" role="tab" id="tab-security" data-legal="security" aria-selected="false" aria-controls="security">Security</button>
+      <button type="button" role="tab" id="tab-device" data-legal="device" aria-selected="false" aria-controls="device">Device</button>
     </div>
 
     <section class="legal-panel" id="terms">
       <h2>Terms of service</h2>
-      <p>Effective 22 October 2026.</p>
-      <p>These terms cover the TradeSafe website and private live trade rooms. TradeSafe is a Delexo product. By using the site, you agree to these terms, the <a href="#privacy">privacy policy</a>, and the <a href="#disputes">transaction and dispute policies</a>.</p>
+      <p>Effective 22 October 2026 (bundle 2026-10-22-s).</p>
+      <p>These terms cover the TradeSafe website and private live trade rooms. TradeSafe is a Delexo product. Creating or joining a trade requires active acceptance of these terms together with the <a href="#privacy">privacy policy</a>, <a href="#disputes">transaction and dispute policy</a>, <a href="#security">security and fraud prevention policy</a>, and <a href="#device">device recognition notice</a>.</p>
       <h2>The service</h2>
       <p>TradeSafe is a browser coordination tool for private trades between people who already trust each other. It is not a bank, licensed escrow agent, insurer, marketplace, or guarantor against scams.</p>
       <h2>Guests</h2>
-      <p>You may use TradeSafe as a guest with a temporary display name and a secure guest session cookie. Display names are labels only — not proof of identity. Creating or joining a trade requires explicit acceptance of these policies. That acceptance is separate from agreeing to a specific trade’s commercial terms inside the room.</p>
+      <p>You may use TradeSafe as a guest with a temporary display name and a secure guest session cookie. Display names are labels only — not proof of identity. Platform policy acceptance is separate from agreeing to a specific trade’s commercial terms inside the room.</p>
       <h2>Payments</h2>
       <p>Any payment authorization, capture, or refund is performed by a third-party payment provider or simulated in demo mode. TradeSafe does not hold customer funds in a vault.</p>
       <h2>Invitations</h2>
       <p>Trade rooms are private and link-based. Invitation tokens can expire or be revoked. Private messages and evidence stay restricted to authorized participants.</p>
       <h2>Changes</h2>
-      <p>These terms can be updated by posting a new version on this page. Continued use after the new date means you accept the update when renewed acceptance is required for create or join.</p>
+      <p>Material policy changes require renewed acceptance before create or join. We do not silently treat prior consent as consent to a new category of data collection.</p>
       <h2>Contact</h2>
       <p>Questions: use the contact channel published by Delexo for TradeSafe support.</p>
     </section>
 
     <section class="legal-panel" id="privacy" hidden>
       <h2>Privacy policy</h2>
-      <p>Effective 22 October 2026.</p>
-      <p>This page says what TradeSafe stores for guest and authenticated use.</p>
+      <p>Effective 22 October 2026 (draft — legal review required).</p>
+      <p>This page describes what TradeSafe stores for guest and authenticated use.</p>
       <h2>What we store</h2>
       <ul>
         <li>Guest session identifiers (hashed tokens) and optional display names</li>
         <li>Trade details you enter (titles, amounts, terms summaries, chat, milestones)</li>
-        <li>Policy acceptance records (policy version, content hash, timestamp, related trade when applicable)</li>
+        <li>Policy acceptance records (policy version, content hash, timestamp, consent bundle version)</li>
+        <li>Security event logs (hashed network references, session refs, event types) for fraud prevention</li>
+        <li>Optional first-party device recognition tokens when you opt in</li>
         <li>Invitation token hashes (raw tokens appear only in share links)</li>
       </ul>
+      <h2>Processors and sharing</h2>
+      <p>We do <strong>not sell</strong> personal or device-identification data. Hosting, database, and payment providers process data as needed to operate the service. We may disclose information when legally required. We do not claim that data is never shared with any third party.</p>
       <h2>Cookies</h2>
-      <p>A secure HttpOnly cookie may identify your guest session across refreshes. It is not used as payment authorization.</p>
-      <h2>Payments</h2>
-      <p>Payment credentials are handled by the payment provider when live payments are enabled. Demo mode does not process real money.</p>
-      <h2>What we do not do</h2>
-      <p>We do not sell your data for advertising. We do not claim that TradeSafe is licensed escrow or insurance.</p>
+      <p>A secure HttpOnly guest session cookie identifies your session. An optional HttpOnly device cookie may be set only after separate optional consent.</p>
+      <h2>Retention</h2>
+      <p>Security events are typically retained up to 24 months; device tokens up to 12 months; consent and admin audit records up to 36 months, unless a legal hold or investigation requires longer preservation. See the Security policy for details.</p>
       <h2>Contact</h2>
       <p>Privacy questions: Delexo TradeSafe support.</p>
     </section>
 
     <section class="legal-panel" id="disputes" hidden>
-      <h2>Transaction and dispute policies</h2>
-      <p>Effective 22 October 2026.</p>
+      <h2>Transaction and dispute policy</h2>
+      <p>Effective 22 October 2026 (draft).</p>
       <p>These policies describe how TradeSafe coordinates private trades. They do not make TradeSafe an escrow agent or insurer.</p>
       <h2>Trade-specific terms</h2>
-      <p>Each trade has its own details (item or service, amount, roles, fulfillment, deadlines). Accepting platform policies does <strong>not</strong> accept those commercial terms. Each participant must review and accept the trade terms separately in the room.</p>
+      <p>Accepting platform policies does <strong>not</strong> accept commercial trade terms. Each participant must review and accept trade terms separately in the room.</p>
       <h2>Cancellations and refunds</h2>
-      <p>Outcomes depend on trade status, participant actions, and — when enabled — the payment provider’s rules for authorization holds and captures. Demo trades simulate these states only.</p>
-      <h2>Disputes</h2>
-      <p>Participants may open a dispute from the room. TradeSafe may record evidence and status; it does not guarantee recovery of funds or resolution of scams.</p>
+      <p>Outcomes depend on trade status, participant actions, and — when enabled — the payment provider’s rules. Demo trades simulate states only.</p>
+      <h2>Disputes and reports</h2>
+      <p>Participants may open a dispute or submit a security report from the room. TradeSafe may record evidence and status; it does not guarantee recovery of funds or resolution of scams. Reporters see status updates only — not another party’s IP, device data, or internal risk scores.</p>
       <h2>Invitations and access</h2>
-      <p>Invitations can expire or be revoked. Losing a guest session may require a new invitation. An invitation link alone does not authorize unrestricted payment release.</p>
+      <p>Invitations can expire or be revoked. An invitation link alone does not authorize unrestricted payment release.</p>
+    </section>
+
+    <section class="legal-panel" id="security" hidden>
+      <h2>Security and fraud prevention policy</h2>
+      <p>Effective 22 October 2026 (draft — legal review required). Bundle 2026-10-22-s.</p>
+      <h2>Purpose</h2>
+      <p>We collect security information to protect buyers and sellers against scams, unauthorized access, invitation abuse, payment integrity issues, and disputes. Collection is purpose-limited and access-controlled.</p>
+      <h2>What is collected (required for create/join)</h2>
+      <ul>
+        <li>Server-observed client IP, stored as a one-way hash and masked form for ordinary admin views</li>
+        <li>Event timestamps (UTC), trade and participant references, session references</li>
+        <li>Security event types (create, join, failed invites, unauthorized access, reports, admin actions)</li>
+        <li>Coarse user-agent family information when present on the request</li>
+      </ul>
+      <p>IP addresses are not definitive identity. Shared networks, VPNs, and carrier NAT are normal. We do not automatically ban users solely because participants share an IP.</p>
+      <h2>Who can access</h2>
+      <p>Authorized security administrators (profiles with admin privileges) may review security logs and incidents. Access and consequential actions are recorded in an admin audit trail. Ordinary participants cannot read raw security logs.</p>
+      <h2>Risk scoring</h2>
+      <p>Internal risk signals (for example, new device token or repeated invite failures) inform rate limits and review. A risk score is not proof of identity and never alone releases or confiscates money.</p>
+      <h2>Retention</h2>
+      <p>Security events: about 24 months. Resolved incidents and admin audit: about 36 months. Legal holds may pause deletion.</p>
+      <h2>Honesty limits</h2>
+      <p>TradeSafe does not claim absolute anonymity, guaranteed identification, or complete prevention of fraud.</p>
+    </section>
+
+    <section class="legal-panel" id="device" hidden>
+      <h2>Device recognition and security logging notice</h2>
+      <p>Effective 22 October 2026 (draft — legal review required).</p>
+      <h2>Optional device recognition</h2>
+      <p>Separate from required security logging, you may opt in to a first-party device recognition cookie: a random server-issued token (hashed at rest) plus coarse browser family, OS family, and device category (desktop / tablet / mobile).</p>
+      <p>This is <strong>not</strong> invasive fingerprinting (no canvas/audio fingerprinting, font enumeration, or cross-site tracking). A matching device token is a risk signal, not verified identity. Devices can be shared, reset, or spoofed.</p>
+      <h2>If you decline</h2>
+      <p>You can still create and join trades. Essential controls (consent, sessions, authorization, invite rate limits, payment integrity) continue. Some “seen before” device signals will be unavailable.</p>
+      <h2>When collected</h2>
+      <p>Optional signals are collected only after you check the optional consent box. They are not collected covertly in the background.</p>
     </section>
   </main>
   <footer id="site-footer"></footer>
@@ -82,11 +121,18 @@
   </script>
   <script>
     (() => {
-      const ids = ["terms", "privacy", "disputes"];
+      const ids = ["terms", "privacy", "disputes", "security", "device"];
       const switchEl = document.querySelector(".legal-switch");
       const tabs = [...document.querySelectorAll(".legal-switch [role='tab']")];
       const panels = ids.map((id) => document.getElementById(id));
-      const alias = { tos: "terms", "transaction_dispute": "disputes", dispute: "disputes", refunds: "disputes" };
+      const alias = {
+        tos: "terms",
+        transaction_dispute: "disputes",
+        dispute: "disputes",
+        refunds: "disputes",
+        security_fraud: "security",
+        device_notice: "device",
+      };
       const show = (id, animate) => {
         const next = ids.includes(id) ? id : "terms";
         switchEl.style.setProperty("--legal-i", String(ids.indexOf(next)));

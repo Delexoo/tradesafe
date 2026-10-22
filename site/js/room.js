@@ -251,6 +251,29 @@ document.getElementById("chat-form").addEventListener("submit", async (e) => {
   }
 });
 
+document.getElementById("report-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById("report-msg");
+  msg.classList.add("hidden");
+  try {
+    const result = await api(`/api/trades/${id}/report`, {
+      method: "POST",
+      body: JSON.stringify({
+        category: document.getElementById("report-category").value,
+        summary: document.getElementById("report-summary").value.trim(),
+        details: document.getElementById("report-details").value.trim(),
+      }),
+    });
+    msg.textContent = `Report ${result.public_id} submitted. Status: ${result.status}.`;
+    msg.classList.remove("hidden");
+    document.getElementById("report-summary").value = "";
+    document.getElementById("report-details").value = "";
+  } catch (err) {
+    msg.textContent = err.message || "Could not submit report";
+    msg.classList.remove("hidden");
+  }
+});
+
 function escapeHtml(s) {
   return String(s || "")
     .replaceAll("&", "&amp;")

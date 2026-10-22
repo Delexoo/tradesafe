@@ -15,7 +15,13 @@ function buildAcceptanceRows(
   policies: { id: string; policy_key: string; version: string; content_hash: string }[],
   transactionId: string | null,
 ) {
-  const required = ["tos", "privacy", "transaction_dispute"];
+  const required = [
+    "tos",
+    "privacy",
+    "transaction_dispute",
+    "security_fraud",
+    "device_notice",
+  ];
   for (const key of required) {
     if (!policies.some((p) => p.policy_key === key)) {
       throw new Error(`Missing active policy: ${key}`);
@@ -39,20 +45,32 @@ describe("policy acceptance", () => {
     {
       id: "1",
       policy_key: "tos",
-      version: "2026-10-22",
+      version: "2026-10-22-s",
       content_hash: createHash("sha256").update("tos").digest("hex"),
     },
     {
       id: "2",
       policy_key: "privacy",
-      version: "2026-10-22",
+      version: "2026-10-22-s",
       content_hash: createHash("sha256").update("privacy").digest("hex"),
     },
     {
       id: "3",
       policy_key: "transaction_dispute",
-      version: "2026-10-22",
+      version: "2026-10-22-s",
       content_hash: createHash("sha256").update("td").digest("hex"),
+    },
+    {
+      id: "4",
+      policy_key: "security_fraud",
+      version: "2026-10-22-s",
+      content_hash: createHash("sha256").update("sec").digest("hex"),
+    },
+    {
+      id: "5",
+      policy_key: "device_notice",
+      version: "2026-10-22-s",
+      content_hash: createHash("sha256").update("dev").digest("hex"),
     },
   ];
 
@@ -68,12 +86,14 @@ describe("policy acceptance", () => {
 
   it("records server policy versions not client-supplied ones", () => {
     const rows = buildAcceptanceRows("actor-1", policies, "tx-1");
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(5);
     expect(rows.every((r) => r.actor_id === "actor-1")).toBe(true);
     expect(rows.map((r) => r.policy_version)).toEqual([
-      "2026-10-22",
-      "2026-10-22",
-      "2026-10-22",
+      "2026-10-22-s",
+      "2026-10-22-s",
+      "2026-10-22-s",
+      "2026-10-22-s",
+      "2026-10-22-s",
     ]);
     expect(rows.find((r) => r.policy_key === "tos")?.content_hash).toBe(
       policies[0].content_hash,

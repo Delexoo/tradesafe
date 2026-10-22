@@ -10,11 +10,12 @@ const next = document.getElementById("next");
 const form = document.getElementById("create-form");
 const errorEl = document.getElementById("error");
 
-document.getElementById("policy-box").innerHTML = policyCheckboxHtml("policy-accept");
+document.getElementById("policy-box").innerHTML = policyCheckboxHtml();
 const policyGate = wirePolicyGate(
   document.getElementById("policy-accept"),
   null,
   errorEl,
+  document.getElementById("device-optional"),
 );
 
 function showStep() {
@@ -37,7 +38,6 @@ function showStep() {
       <p class="hint">Category: ${document.getElementById("category").value} · Delivery: ${document.getElementById("delivery").value}</p>
       <p class="hint" style="margin-top:8px">${escapeHtml(document.getElementById("terms").value || "Default dispute and cancellation terms apply.")}</p>
     `;
-    // Gate final submit on policy checkbox
     const cb = document.getElementById("policy-accept");
     next.disabled = !cb.checked;
     cb.onchange = () => {
@@ -94,6 +94,8 @@ form.addEventListener("submit", async (e) => {
       creator_role: document.getElementById("role").value,
       terms: { summary: document.getElementById("terms").value.trim() },
       display_name: displayName,
+      acceptedRequired: true,
+      acceptedOptionalDevice: policyGate.optionalDeviceAccepted(),
       acceptedPolicies: true,
     };
     const result = await api("/api/trades", {

@@ -10,11 +10,12 @@ const summaryEl = document.getElementById("summary");
 const form = document.getElementById("join-form");
 const joinBtn = document.getElementById("join-btn");
 
-document.getElementById("policy-box").innerHTML = policyCheckboxHtml("policy-accept");
+document.getElementById("policy-box").innerHTML = policyCheckboxHtml();
 const policyGate = wirePolicyGate(
   document.getElementById("policy-accept"),
   joinBtn,
   errorEl,
+  document.getElementById("device-optional"),
 );
 
 try {
@@ -63,6 +64,8 @@ form.addEventListener("submit", async (e) => {
       body: JSON.stringify({
         token,
         display_name: displayName,
+        acceptedRequired: true,
+        acceptedOptionalDevice: policyGate.optionalDeviceAccepted(),
         acceptedPolicies: true,
       }),
     });
