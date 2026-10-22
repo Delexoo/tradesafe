@@ -3,6 +3,38 @@
   "product": "TradeSafe",
   "updates": [
     {
+      "version": "0.1.13",
+      "date": "2026-10-22",
+      "title": "Account, payout, and a four-step create wizard",
+      "sections": [
+        {
+          "heading": "Wizard",
+          "added": [
+            "Create a trade asks for the name and amount, then category and delivery with an optional description, then your side and name, then the policies.",
+            "The terms summary field is no longer part of creating a trade."
+          ]
+        },
+        {
+          "heading": "Auth",
+          "added": [
+            "Starting a trade requires an email account so the creator can be paid."
+          ]
+        },
+        {
+          "heading": "Payments",
+          "added": [
+            "Sellers add a Stripe payout account before a trade can be created or paid. Stripe sends the card authorization there. TradeSafe does not hold the money."
+          ]
+        },
+        {
+          "heading": "Room",
+          "added": [
+            "A seller without a payout account sees Add payout account as the next step."
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.12",
       "date": "2026-10-22",
       "title": "A clear next step and real card payments",

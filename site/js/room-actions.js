@@ -1,6 +1,6 @@
 /** What the room should ask this person to do next. */
 
-export function nextStep({ status, role, accepted, paidWaiting }) {
+export function nextStep({ status, role, accepted, paidWaiting, payoutReady }) {
   if (status === "disputed") {
     return {
       headline: "This trade is paused.",
@@ -28,6 +28,17 @@ export function nextStep({ status, role, accepted, paidWaiting }) {
       headline: "This payment was refunded.",
       detail: "Nothing else to do here.",
       action: null,
+    };
+  }
+  if (
+    role === "seller" &&
+    payoutReady === false &&
+    !["completed", "cancelled", "expired", "refunded"].includes(status)
+  ) {
+    return {
+      headline: "Add where you get paid.",
+      detail: "Stripe sends the payment to that account. TradeSafe does not hold the money.",
+      action: { act: "payout", label: "Add payout account" },
     };
   }
   if (status === "awaiting_acceptance") {

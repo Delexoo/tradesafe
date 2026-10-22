@@ -20,6 +20,17 @@ describe("room next step", () => {
     expect(step.detail).toMatch(/does not hold/i);
   });
 
+  it("asks the seller to add a payout account before anything else", () => {
+    const step = nextStep({
+      status: "awaiting_acceptance",
+      role: "seller",
+      accepted: false,
+      payoutReady: false,
+    });
+    expect(step.action).toEqual({ act: "payout", label: "Add payout account" });
+    expect(step.detail).toMatch(/does not hold/i);
+  });
+
   it("asks the seller for one send action", () => {
     const step = nextStep({
       status: "awaiting_fulfillment",

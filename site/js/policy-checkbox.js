@@ -3,6 +3,29 @@
 export function policyCheckboxHtml(ids = {}) {
   const requiredId = ids.required || "policy-accept";
   const optionalId = ids.optional || "device-optional";
+  if (ids.wizard) {
+    return `
+<div class="policy-block policy-wizard">
+  <p class="hint policy-explain">TradeSafe does not hold the money.</p>
+  <label class="policy-accept" for="${requiredId}">
+    <input type="checkbox" id="${requiredId}" name="policy_accept">
+    <span>
+      I agree to the
+      <a href="/legal.html#terms" target="_blank" rel="noopener">Terms</a>,
+      <a href="/legal.html#privacy" target="_blank" rel="noopener">Privacy</a>,
+      <a href="/legal.html#disputes" target="_blank" rel="noopener">Dispute</a>,
+      <a href="/legal.html#security" target="_blank" rel="noopener">Security</a>,
+      and
+      <a href="/legal.html#device" target="_blank" rel="noopener">Device</a>
+      policies.
+    </span>
+  </label>
+  <label class="policy-accept policy-optional" for="${optionalId}">
+    <input type="checkbox" id="${optionalId}" name="device_optional">
+    <span>Optional: remember this browser to spot suspicious logins.</span>
+  </label>
+</div>`;
+  }
   const explain = ids.compact
     ? `<p class="hint policy-explain">Accept the policies to create this trade. TradeSafe does not hold the money.</p>`
     : `<p class="hint policy-explain">

@@ -8,92 +8,110 @@
   <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/fonts.css">
   <link rel="stylesheet" href="/site.css">
-  <link rel="stylesheet" href="/css/app.css?v=20261022d">
+  <link rel="stylesheet" href="/css/app.css?v=20261022g">
 </head>
 <body class="app" data-page="create">
   <a class="skip" href="#content">Skip to content</a>
   <header id="site-header"></header>
   <main id="content">
-    <div class="panel create-card" id="wizard">
-      <div class="create-intro">
-        <h1>Create a trade</h1>
-        <p class="note">Name the deal, pick a side, and invite the other person.</p>
-      </div>
+    <div class="panel create-card" id="account-gate">
+      <h1>Create an account</h1>
+      <p class="note">You need an account so Stripe can pay you when the trade is done.</p>
+      <form id="account-form" class="form-stack">
+        <div>
+          <label class="field-label" for="account-email">Email</label>
+          <input class="field" id="account-email" type="email" autocomplete="email" inputmode="email" placeholder="you@email.com">
+        </div>
+        <p id="account-error" class="field-error hidden" role="alert"></p>
+        <p id="account-status" class="hint hidden" role="status"></p>
+        <button class="btn act-btn" id="account-submit" type="submit">Email me a link</button>
+      </form>
+      <p class="hint"><button type="button" class="text-link" id="account-switch">I already have an account</button></p>
+    </div>
+    <div class="panel create-card hidden" id="wizard">
+      <p class="wizard-count" id="step-label">1 of 4</p>
+      <h1 id="step-title">Name the trade</h1>
       <form id="create-form" class="form-stack" novalidate>
-        <div>
-          <label class="field-label" for="title">What are you trading?</label>
-          <input class="field" id="title" name="title" maxlength="200" autocomplete="off" placeholder="Vintage camera">
-          <p class="field-error hidden" data-error-for="title"></p>
-        </div>
-        <div class="form-row cols-2">
+        <div data-pane="0">
           <div>
-            <label class="field-label" for="amount">Amount</label>
-            <input class="field" id="amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
-            <p class="field-error hidden" data-error-for="amount"></p>
+            <label class="field-label" for="title">Trade name</label>
+            <input class="field" id="title" name="title" maxlength="200" autocomplete="off" placeholder="Vintage camera">
+            <p class="field-error hidden" data-error-for="title"></p>
           </div>
-          <div>
-            <label class="field-label" for="currency">Currency</label>
-            <select class="field" id="currency" name="currency">
-              <option value="usd">USD</option>
-              <option value="eur">EUR</option>
-              <option value="gbp">GBP</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <span class="field-label">You are the</span>
-          <div class="choice" role="group" aria-label="Your role">
-            <button type="button" class="on" data-role="seller" aria-pressed="true">Seller</button>
-            <button type="button" data-role="buyer" aria-pressed="false">Buyer</button>
-          </div>
-          <input type="hidden" id="role" value="seller">
-          <p class="hint">The invite gives the other person the opposite role.</p>
-        </div>
-        <div>
-          <label class="field-label" for="display-name">Your name in this trade</label>
-          <input class="field" id="display-name" name="display-name" maxlength="80" autocomplete="nickname" placeholder="Alex">
-          <p class="field-error hidden" data-error-for="display-name"></p>
-        </div>
-        <details class="mini-menu">
-          <summary>More details</summary>
-          <div class="form-stack">
+          <div class="form-row cols-2">
             <div>
-              <label class="field-label" for="description">Description</label>
-              <textarea class="field" id="description" maxlength="5000" placeholder="Optional"></textarea>
+              <label class="field-label" for="amount">Amount</label>
+              <input class="field" id="amount" name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="0.00">
+              <p class="field-error hidden" data-error-for="amount"></p>
             </div>
+            <div>
+              <label class="field-label" for="currency">Currency</label>
+              <select class="field" id="currency" name="currency">
+                <option value="usd">USD</option>
+                <option value="eur">EUR</option>
+                <option value="gbp">GBP</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div data-pane="1" hidden>
+          <div class="form-row cols-2">
             <div>
               <label class="field-label" for="category">Category</label>
               <select class="field" id="category">
-                <option value="other" selected>Other</option>
                 <option value="physical">Physical goods</option>
                 <option value="digital">Digital</option>
                 <option value="electronics">Electronics</option>
                 <option value="collectibles">Collectibles</option>
                 <option value="website_domain">Website / domain</option>
                 <option value="service">Service</option>
+                <option value="other" selected>Other</option>
               </select>
             </div>
             <div>
               <label class="field-label" for="delivery">How it is delivered</label>
               <select class="field" id="delivery">
-                <option value="other" selected>Other</option>
                 <option value="shipping">Shipping</option>
                 <option value="digital_transfer">Digital transfer</option>
                 <option value="pickup">Pickup</option>
                 <option value="in_person">In person</option>
+                <option value="other" selected>Other</option>
               </select>
             </div>
-            <div>
-              <label class="field-label" for="terms">Terms</label>
-              <textarea class="field" id="terms" maxlength="5000" placeholder="Optional"></textarea>
-            </div>
           </div>
-        </details>
-        <div id="policy-box"></div>
-        <p class="field-error hidden" data-error-for="policy-accept"></p>
-        <p class="hint">TradeSafe does not hold the money.</p>
+          <div>
+            <label class="field-label" for="description">Description, optional</label>
+            <input class="field" id="description" maxlength="5000" placeholder="Anything the other person should know">
+          </div>
+        </div>
+        <div data-pane="2" hidden>
+          <div>
+            <span class="field-label">You are the</span>
+            <div class="choice" role="group" aria-label="Your role">
+              <button type="button" class="on" data-role="seller" aria-pressed="true">Seller</button>
+              <button type="button" data-role="buyer" aria-pressed="false">Buyer</button>
+            </div>
+            <input type="hidden" id="role" value="seller">
+          </div>
+          <div>
+            <label class="field-label" for="display-name">Your name in this trade</label>
+            <input class="field" id="display-name" name="display-name" maxlength="80" autocomplete="nickname" placeholder="Alex">
+            <p class="field-error hidden" data-error-for="display-name"></p>
+          </div>
+        </div>
+        <div data-pane="3" hidden>
+          <div id="payout-box" hidden>
+            <p class="hint" id="payout-status">Add where you get paid. Stripe sends the money there. TradeSafe does not hold it.</p>
+            <button type="button" class="btn act-btn" id="payout-btn">Add payout account</button>
+          </div>
+          <div id="policy-box"></div>
+          <p class="field-error hidden" data-error-for="policy-accept"></p>
+        </div>
         <p id="error" class="field-error hidden" role="alert"></p>
-        <button type="button" class="btn act-btn" id="next">Create trade</button>
+        <div class="wizard-nav">
+          <button type="button" class="ghost" id="back" hidden>Back</button>
+          <button type="button" class="btn act-btn" id="next">Next</button>
+        </div>
       </form>
     </div>
     <div id="created" class="panel create-card create-success hidden">
@@ -112,6 +130,6 @@
     import { mountChrome } from "/js/chrome.js";
     mountChrome({ active: "Create a trade" });
   </script>
-  <script type="module" src="/js/create.js?v=20261022d"></script>
+  <script type="module" src="/js/create.js?v=20261022h"></script>
 </body>
 </html>

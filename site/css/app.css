@@ -397,18 +397,53 @@ body[data-page="signup"] main#content {
 body[data-page="create"] main#content {
   width: min(34rem, calc(100% - 2rem));
   margin-inline: auto;
-  padding: 5.5rem 0 2rem;
+  padding: 5.2rem 0 0.6rem;
 }
 body[data-page="create"] footer {
   width: min(34rem, calc(100% - 2rem));
   margin-inline: auto;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
   text-align: center;
 }
 body[data-page="create"] .footer-product { justify-items: center; }
 body[data-page="create"] .footer-links { justify-items: center; }
 .create-card {
-  padding: 1.6rem 1.45rem 1.35rem;
+  padding: 1.25rem 1.35rem 1.15rem;
 }
+.create-card h1 { text-align: center; }
+.text-link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--receipt-ink, var(--text));
+  font: inherit;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.wizard-count {
+  margin: 0 0 0.15rem;
+  text-align: center;
+  color: var(--app-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.wizard-nav {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.wizard-nav .act-btn { flex: 1; }
+.wizard-nav .ghost { min-height: 56px; min-width: 5.5rem; }
+body[data-page="create"] [data-pane] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+body[data-page="create"] .policy-block { gap: 8px; }
+body[data-page="create"] .policy-accept { padding: 10px 12px; }
 .create-intro { text-align: center; }
 .create-intro .note { margin-inline: auto; max-width: 28rem; }
 body[data-page="create"] .wizard-steps {

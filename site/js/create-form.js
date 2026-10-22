@@ -1,4 +1,4 @@
-/** One-screen create trade. */
+/** Four short create-trade steps. Description is optional. */
 export const CREATE_STEPS = [
   {
     fields: [
@@ -8,10 +8,19 @@ export const CREATE_STEPS = [
         empty: "Enter an amount greater than 0.",
         check: "amount",
       },
+    ],
+  },
+  { fields: [] },
+  {
+    fields: [
       {
         id: "display-name",
         empty: "Enter the name you want shown in this trade.",
       },
+    ],
+  },
+  {
+    fields: [
       {
         id: "policy-accept",
         empty: "Accept the required policies to create this trade.",

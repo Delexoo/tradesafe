@@ -37,6 +37,8 @@ import {
   applyProviderPaymentUpdate as applyProviderPaymentUpdateImpl,
 } from "./lib/security-handlers.mjs";
 import { getTradeConfidence } from "./lib/trade-confidence.mjs";
+import { accountProblem } from "./lib/account-gate.mjs";
+import { createPayoutLink, readPayout, refreshPayout } from "./lib/payouts.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = __dirname;
@@ -233,9 +235,7 @@ async function handleApi(req, res, url) {
   let actor = await resolveActor(req, getAdmin());
 
   // Guest-capable routes: ensure session when missing
-  const guestRoutes =
-    (p === "/api/trades" && req.method === "POST") ||
-    (p === "/api/invitations/join" && req.method === "POST");
+  const guestRoutes = p === "/api/invitations/join" && req.method === "POST";
 
   if (!actor && guestRoutes) {
     const bodyPeek = await readJson(req);
@@ -249,6 +249,10 @@ async function handleApi(req, res, url) {
   }
 
   if (!actor && p !== "/api/payments/webhook") {
+    if (p === "/api/trades" && req.method === "POST") {
+      json(res, 403, { error: accountProblem(null), code: "ACCOUNT_REQUIRED" }, req);
+      return;
+    }
     json(res, 401, { error: "Unauthorized" }, req);
     return;
   }
@@ -391,7 +395,39 @@ async function handleApi(req, res, url) {
     return;
   }
 
+  if (p === "/api/payouts" && req.method === "GET") {
+    const blocked = accountProblem(actor);
+    if (blocked) {
+      json(res, 403, { error: blocked, code: "ACCOUNT_REQUIRED" }, req);
+      return;
+    }
+    const payout = await refreshPayout(getAdmin(), actor.id);
+    json(res, 200, { ready: payout.ready }, req);
+    return;
+  }
+
+  if (p === "/api/payouts/link" && req.method === "POST") {
+    const body = await readJson(req);
+    try {
+      const url = await createPayoutLink(
+        getAdmin(),
+        actor,
+        publicOrigin(req),
+        body.returnPath,
+      );
+      json(res, 200, { url }, req);
+    } catch (err) {
+      json(res, err.status || 503, { error: err.message, code: err.code || "PAYOUT_UNAVAILABLE" }, req);
+    }
+    return;
+  }
+
   if (p === "/api/trades" && req.method === "POST") {
+    const blocked = accountProblem(actor);
+    if (blocked) {
+      json(res, 403, { error: blocked, code: "ACCOUNT_REQUIRED" }, req);
+      return;
+    }
     const body = req._body || (await readJson(req));
     const result = await createTrade(actor, body, req);
     json(res, 201, result, req);
@@ -569,6 +605,13 @@ async function createTrade(actor, input, req) {
     err.status = 400;
     throw err;
   }
+  const blockedAccount = accountProblem(actor);
+  if (blockedAccount) {
+    const err = new Error(blockedAccount);
+    err.status = 403;
+    err.code = "ACCOUNT_REQUIRED";
+    throw err;
+  }
 
   await ensureProfile({ ...actor, display_name: displayName });
   await getAdmin()
@@ -598,6 +641,17 @@ async function createTrade(actor, input, req) {
   const isDemo = !STRIPE_ON;
   const creatorRole = input.creator_role === "buyer" ? "buyer" : "seller";
   const other = creatorRole === "buyer" ? "seller" : "buyer";
+  let sellerAccountId = null;
+  if (creatorRole === "seller") {
+    const payout = await refreshPayout(getAdmin(), actor.id);
+    if (!payout.ready) {
+      const err = new Error("Add where you get paid before creating this trade.");
+      err.status = 400;
+      err.code = "PAYOUT_REQUIRED";
+      throw err;
+    }
+    sellerAccountId = payout.accountId;
+  }
   const termsBody = {
     deliveryMethod: input.delivery_method || "other",
     ...(input.terms || {}),
@@ -619,6 +673,7 @@ async function createTrade(actor, input, req) {
       terms: termsBody,
       terms_version: 1,
       is_demo: isDemo,
+      metadata: sellerAccountId ? { seller_account_id: sellerAccountId } : {},
     })
     .select("*")
     .single();
@@ -757,6 +812,12 @@ async function getRoom(userId, tradeId) {
     getAdmin().from("ts_messages").select("*, ts_profiles(display_name, avatar_url)").eq("transaction_id", tradeId).order("created_at", { ascending: true }).limit(200),
   ]);
 
+  let payoutReady = true;
+  if (participant?.role === "seller" && participant.user_id) {
+    const stored = await readPayout(getAdmin(), participant.user_id);
+    payoutReady = stored.ready;
+  }
+
   let payment = payments?.[0] || null;
   let transaction = tx;
   try {
@@ -778,6 +839,7 @@ async function getRoom(userId, tradeId) {
     events: events || [],
     messages: messages || [],
     myRole: participant?.role || null,
+    payoutReady,
   };
 }
 
@@ -1098,11 +1160,20 @@ async function performAction(userId, tradeId, action, payload, req) {
     }
     const Stripe = (await import("stripe")).default;
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const seller = (room.participants || []).find((p) => p.role === "seller" && p.user_id);
+    const sellerPayout = seller ? await refreshPayout(getAdmin(), seller.user_id) : { ready: false };
+    if (!sellerPayout.ready || !sellerPayout.accountId) {
+      const err = new Error("The seller has to add where they get paid before anyone can pay.");
+      err.status = 400;
+      err.code = "PAYOUT_REQUIRED";
+      throw err;
+    }
     const origin = publicOrigin(req);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_intent_data: {
         capture_method: "manual",
+        transfer_data: { destination: sellerPayout.accountId },
         metadata: {
           transaction_id: tradeId,
           reference_code: tx.reference_code,

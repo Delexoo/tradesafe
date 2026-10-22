@@ -8,20 +8,10 @@ const filled = {
   "policy-accept": true,
 };
 
-describe("create trade form", () => {
-  it("asks for the title, amount, name, and policies", () => {
-    const problems = problemsForStep(0, {
-      title: "  ",
-      amount: "",
-      "display-name": "",
-      "policy-accept": false,
-    });
-    expect(problems.map((p) => p.id)).toEqual([
-      "title",
-      "amount",
-      "display-name",
-      "policy-accept",
-    ]);
+describe("create trade wizard", () => {
+  it("asks for a title and amount first", () => {
+    const problems = problemsForStep(0, { title: "  ", amount: "" });
+    expect(problems.map((p) => p.id)).toEqual(["title", "amount"]);
   });
 
   it("rejects a zero amount", () => {
@@ -30,7 +20,21 @@ describe("create trade form", () => {
     ]);
   });
 
-  it("accepts a complete trade", () => {
-    expect(problemsForStep(0, filled)).toEqual([]);
+  it("lets the description stay blank", () => {
+    expect(problemsForStep(1, { description: "" })).toEqual([]);
+  });
+
+  it("asks for a display name on the role step", () => {
+    expect(problemsForStep(2, { "display-name": "" }).map((p) => p.id)).toEqual([
+      "display-name",
+    ]);
+    expect(problemsForStep(2, filled)).toEqual([]);
+  });
+
+  it("asks for the policies on the last step", () => {
+    expect(problemsForStep(3, { "policy-accept": false }).map((p) => p.id)).toEqual([
+      "policy-accept",
+    ]);
+    expect(problemsForStep(3, filled)).toEqual([]);
   });
 });

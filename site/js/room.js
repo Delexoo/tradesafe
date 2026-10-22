@@ -21,6 +21,9 @@ if (!id) {
 } else {
   try {
     await ensureGuest();
+    if (new URLSearchParams(location.search).get("payout") === "return") {
+      await api("/api/payouts").catch(() => {});
+    }
     const profile = await api("/api/profile");
     myActorId = profile.profile?.id;
     await loadRoom(myActorId);
@@ -129,6 +132,7 @@ function renderActions(tx, role, data, userId) {
     role,
     accepted: meAccepted(data, userId),
     paidWaiting,
+    payoutReady: data.payoutReady,
   });
   const track = step.track
     ? `<label class="field-label" for="track-input">Tracking number or note</label>
@@ -167,6 +171,16 @@ async function runAction(act, tx) {
   try {
     if (act === "accept") {
       await api(`/api/trades/${tx.id}/accept`, { method: "POST", body: "{}" });
+    } else if (act === "payout") {
+      const result = await api("/api/payouts/link", {
+        method: "POST",
+        body: JSON.stringify({
+          returnPath: `${location.pathname}${location.search}`,
+        }),
+      });
+      if (!result.url) throw new Error("Could not open the payout account. Try again.");
+      location.href = result.url;
+      return;
     } else if (act === "pay") {
       const result = await api(`/api/trades/${tx.id}/actions`, {
         method: "POST",
